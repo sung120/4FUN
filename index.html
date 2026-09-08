@@ -100,7 +100,7 @@
 
         const joinGame = async () => {
           if (!inputName.value.trim()) return alert('請輸入名字');
-          const id = 'P_' + Math.random().toString(36.substring(2, 9));
+          const id = 'P_' + Math.random().toString(36).substring(2, 9);
           await supabase.from('players').insert([{ id, name: inputName.value, score: 0 }]);
           localStorage.setItem('wedding_pid', id);
           localStorage.setItem('wedding_name', inputName.value);
