@@ -128,8 +128,22 @@
         const playerId = ref(localStorage.getItem('wedding_pid') || '');
         const joined = ref(!!playerId.value);
         
-        const questions = ref([]);
-        const currentQuestion = ref(null);
+        // 雙保險內建題庫（對應你的 Supabase 欄位格式）
+        const questions = ref([
+          { id: 1, question: "他們養了幾隻貓？", option_a: "1", option_b: "2", option_c: "3", option_d: "4", answer: "OptionC" },
+          { id: 2, question: "他們誰比較老？", option_a: "新郎", option_b: "新娘", option_c: "一樣老", option_d: "都18歲", answer: "OptionA" },
+          { id: 3, question: "他們把哪間婚紗公司拍倒閉了？", option_a: "沒有拍婚紗", option_b: "貝拉婚紗", option_c: "莎琪瑪婚紗攝影", option_d: "韓國藝匠", answer: "OptionD" },
+          { id: 4, question: "今天排隊順序是怎麼排序的？", option_a: "比體重重", option_b: "由左至右按照順序", option_c: "比身高高", option_d: "由前往後按照順序", answer: "OptionD" },
+          { id: 5, question: "那隻顏色的貓最喜歡新郎做報告/論文？", option_a: "白貓，小白", option_b: "橘貓，幾多多", option_c: "三花貓，樂樂", option_d: "以上皆是", answer: "OptionD" }
+        ]);
+
+        const currentQuestion = computed(() => {
+          if (currentQ.value > 0 && currentQ.value <= questions.value.length) {
+            return questions.value[currentQ.value - 1];
+          }
+          return null;
+        });
+
         const selectedOption = ref(null);
         const submitted = ref(false);
         const timer = ref(15);
@@ -137,22 +151,11 @@
         const leaderboard = ref([]);
         let timerInterval = null;
 
-        // 從 Supabase 抓取題庫
-        const fetchQuestions = async () => {
-          let { data } = await db.from('questions').select('*').order('id', { ascending: true });
-          if (data) {
-            questions.value = data;
-          }
-        };
-
         const fetchState = async () => {
           let { data } = await db.from('game_state').select('*').eq('id', 1).single();
           if (data) {
             status.value = data.status;
             currentQ.value = data.current_q;
-            if (data.current_q > 0 && questions.value.length > 0) {
-              currentQuestion.value = questions.value[data.current_q - 1];
-            }
           }
           let { count } = await db.from('players').select('*', { count: 'exact', head: true });
           playerCount.value = count || 0;
@@ -169,16 +172,12 @@
         };
 
         onMounted(async () => {
-          await fetchQuestions();
           await fetchState();
 
           db.channel('public:game_state')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, payload => {
               status.value = payload.new.status;
               currentQ.value = payload.new.current_q;
-              if (payload.new.current_q > 0 && questions.value.length > 0) {
-                currentQuestion.value = questions.value[payload.new.current_q - 1];
-              }
               if (payload.new.status === 'FINISHED') {
                 fetchLeaderboard();
               }
@@ -209,7 +208,12 @@
         const joinGame = async () => {
           if (!inputName.value.trim()) return alert('請輸入名字');
           const id = 'P_' + Math.random().toString(36).substring(2, 9);
-          await db.from('players').insert([{ id, name: inputName.value.trim(), score: 0 }]);
+          // 確保寫入玩家時不報錯
+          const { error } = await db.from('players').insert([{ id, name: inputName.value.trim(), score: 0 }]);
+          if (error) {
+            alert('加入失敗，請再試一次');
+            return;
+          }
           localStorage.setItem('wedding_pid', id);
           localStorage.setItem('wedding_name', inputName.value.trim());
           playerId.value = id;
@@ -237,7 +241,6 @@
           selectedOption.value = idx;
           submitted.value = true;
 
-          // 對應資料庫的 answer 欄位（例如 'OptionA', 'OptionB', 'OptionC', 'OptionD'）
           const mapOpt = ['OptionA', 'OptionB', 'OptionC', 'OptionD'];
           if (currentQuestion.value && mapOpt[idx] === currentQuestion.value.answer) {
             let addScore = 10 + timer.value; 
