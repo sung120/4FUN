@@ -15,12 +15,19 @@
     <!-- 大螢幕端 (?view=screen) -->
     <template v-if="isScreenView">
       <div class="max-w-6xl mx-auto w-full flex-1 flex flex-col justify-between py-2">
+        <!-- 大廳等待畫面 -->
         <div v-if="status === 'LOBBY' || currentQ === 0" class="flex-1 flex flex-col items-center justify-center bg-white p-12 rounded-3xl shadow-2xl text-center my-auto">
           <h1 class="text-5xl font-extrabold text-pink-600 mb-6">💕 婚禮互動問答大廳</h1>
           <p class="text-2xl text-gray-600 mb-8">請掃描 QR Code 或輸入網址加入遊戲！</p>
           <div class="bg-pink-100 border-4 border-pink-300 px-8 py-6 rounded-2xl mb-10">
             <span class="text-3xl font-bold text-gray-700">目前參賽人數：</span>
-            <span class="text-5xl font-extrabold text-pink-600 ml-3">{{ playerCount }} 人</span>
+            <span class="text-5xl font-extrabold text-pink-600 ml-3">{{ playersList.length }} 人</span>
+          </div>
+          <!-- 顯示已加入的玩家清單 -->
+          <div class="flex flex-wrap justify-center gap-3 max-w-2xl mb-8 max-h-40 overflow-y-auto">
+            <span v-for="p in playersList" :key="p.id" class="bg-pink-50 border border-pink-200 px-4 py-2 rounded-full text-lg font-bold text-pink-600 shadow-sm">
+              {{ p.name }}
+            </span>
           </div>
           <div class="flex gap-6">
             <button @click="resetGame" class="bg-red-500 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">🔄 重置遊戲</button>
@@ -28,6 +35,7 @@
           </div>
         </div>
 
+        <!-- 遊戲結束結算與排行榜畫面 -->
         <div v-else-if="status === 'FINISHED'" class="flex-1 flex flex-col items-center justify-center bg-white p-12 rounded-3xl shadow-2xl text-center my-auto">
           <h1 class="text-5xl font-extrabold text-pink-600 mb-6">🏆 最終英雄榜</h1>
           <div class="w-full max-w-xl bg-pink-50 p-6 rounded-2xl mb-8 border-2 border-pink-200">
@@ -39,6 +47,7 @@
           <button @click="resetGame" class="bg-red-500 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">🔄 重新開始遊戲</button>
         </div>
 
+        <!-- 遊戲進行中畫面 -->
         <div v-else class="flex-1 flex flex-col justify-between bg-white p-8 rounded-3xl shadow-2xl my-auto">
           <div class="flex justify-between items-center border-b pb-4 mb-6">
             <span class="text-3xl font-extrabold text-pink-600">第 {{ currentQ }} 題 / 共 {{ questions.length }} 題 ｜ 倒數計時：<span :class="timer === 0 ? 'text-gray-400' : 'text-red-500'">{{ timer }}</span> 秒</span>
@@ -47,14 +56,26 @@
           
           <div class="text-center my-auto" v-if="currentQuestion">
             <h2 class="text-4xl font-bold text-gray-800 mb-10">{{ currentQuestion.question }}</h2>
-            <div class="grid grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div class="grid grid-cols-2 gap-6 max-w-4xl mx-auto mb-8">
               <div v-for="(opt, idx) in [currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d]" :key="idx" 
                    :class="timer === 0 && ['OptionA', 'OptionB', 'OptionC', 'OptionD'][idx] === currentQuestion.answer ? 'bg-green-300 border-green-600 ring-4 ring-green-400' : 'bg-pink-50 border-pink-200'"
                    class="border-2 p-6 rounded-2xl text-2xl font-semibold text-gray-700 shadow transition-all">
                 {{ ['A', 'B', 'C', 'D'][idx] }}. {{ opt }}
               </div>
             </div>
-            <div v-if="timer === 0" class="mt-8 text-2xl font-bold text-green-600 animate-bounce">✨ 時間到！正確答案已顯現 ✨</div>
+            
+            <!-- 即時戰況排行榜預覽 -->
+            <div class="bg-pink-50 p-4 rounded-2xl border border-pink-200 max-w-xl mx-auto">
+              <h3 class="font-bold text-pink-600 mb-2">🔥 即時戰況排行榜前三名</h3>
+              <div class="flex justify-around text-lg font-bold">
+                <span v-for="(p, idx) in leaderboard.slice(0, 3)" :key="p.id">
+                  {{ ['🥇','🥈','🥉'][idx] }} {{ p.name }} ({{ p.score }}分)
+                </span>
+                <span v-if="leaderboard.length === 0" class="text-gray-400">尚無計分資料</span>
+              </div>
+            </div>
+
+            <div v-if="timer === 0" class="mt-6 text-2xl font-bold text-green-600 animate-bounce">✨ 時間到！正確答案已顯現 ✨</div>
           </div>
         </div>
       </div>
@@ -63,6 +84,7 @@
     <!-- 手機答題端 -->
     <template v-else>
       <div class="max-w-md mx-auto w-full flex-1 flex flex-col justify-center py-4">
+        <!-- 登入畫面 -->
         <div v-if="!joined" class="bg-white p-6 rounded-2xl shadow-xl text-center">
           <h2 class="text-2xl font-bold text-pink-600 mb-2">💕 婚禮即時搶答</h2>
           <p class="text-gray-500 mb-4">輸入名字即可參與互動搶答！</p>
@@ -70,23 +92,27 @@
           <button @click="joinGame" class="w-full bg-pink-500 text-white py-3 rounded-lg font-bold text-lg shadow">進入遊戲</button>
         </div>
 
+        <!-- 手機端結算畫面 -->
         <div v-else-if="status === 'FINISHED'" class="bg-white p-6 rounded-2xl shadow-xl text-center py-10">
           <h2 class="text-3xl font-bold text-pink-600 mb-4">🎉 互動問答圓滿結束！</h2>
           <p class="text-gray-600 text-lg mb-4">謝謝 <span class="font-bold text-pink-600">{{ nickname }}</span> 的熱情參與！</p>
           <div class="text-2xl font-bold text-pink-500 bg-pink-50 p-4 rounded-xl border border-pink-200">你的最終得分：{{ myScore }} 分</div>
         </div>
 
+        <!-- 遊戲進行中答題畫面 -->
         <div v-else class="bg-white p-6 rounded-2xl shadow-xl">
           <div class="flex justify-between items-center mb-4 border-b pb-2">
-            <span class="font-bold text-pink-600">玩家：{{ nickname }}</span>
+            <span class="font-bold text-pink-600">玩家：{{ nickname }} ({{ myScore }}分)</span>
             <span class="text-sm font-bold" :class="timer === 0 ? 'text-gray-400' : 'text-red-500'">⏳ {{ timer === 0 ? '時間到' : timer + 's' }}</span>
           </div>
 
+          <!-- 等待開始 -->
           <div v-if="status === 'LOBBY' || currentQ === 0" class="text-center py-10">
             <div class="text-6xl mb-4">⏳</div>
             <h3 class="text-xl font-bold text-gray-700">請等待新郎新娘開始遊戲...</h3>
           </div>
 
+          <!-- 作答中 -->
           <div v-else-if="currentQuestion">
             <h3 class="text-lg font-bold text-gray-800 mb-4 text-center">第 {{ currentQ }} 題：{{ currentQuestion.question }}</h3>
             <div class="flex flex-col gap-3">
@@ -122,6 +148,7 @@
         const status = ref('LOBBY');
         const currentQ = ref(0);
         const playerCount = ref(0);
+        const playersList = ref([]);
         const inputName = ref('');
         const nickname = ref(localStorage.getItem('wedding_name') || '');
         const playerId = ref(localStorage.getItem('wedding_pid') || '');
@@ -155,18 +182,19 @@
             status.value = data.status;
             currentQ.value = data.current_q;
           }
-          let { count } = await db.from('players').select('*', { count: 'exact', head: true });
-          playerCount.value = count || 0;
+
+          // 抓取所有玩家清單與即時排行榜
+          let { data: pData, count } = await db.from('players').select('*', { count: 'exact' }).order('score', { ascending: false });
+          if (pData) {
+            playersList.value = pData;
+            leaderboard.value = pData;
+            playerCount.value = count || pData.length;
+          }
 
           if (playerId.value) {
-            let { data: pData } = await db.from('players').select('score').eq('id', playerId.value).maybeSingle();
-            if (pData) myScore.value = pData.score;
+            let myData = pData?.find(p => p.id === playerId.value);
+            if (myData) myScore.value = myData.score;
           }
-        };
-
-        const fetchLeaderboard = async () => {
-          let { data } = await db.from('players').select('*').order('score', { ascending: false }).limit(5);
-          if (data) leaderboard.value = data;
         };
 
         onMounted(async () => {
@@ -176,14 +204,12 @@
             .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, payload => {
               status.value = payload.new.status;
               currentQ.value = payload.new.current_q;
-              if (payload.new.status === 'FINISHED') {
-                fetchLeaderboard();
-              }
               if (payload.new.status === 'PLAYING') {
                 selectedOption.value = null;
                 submitted.value = false;
                 startTimer();
               }
+              fetchState();
             })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => {
               fetchState();
@@ -227,7 +253,6 @@
           let nextQ = currentQ.value + 1;
           if (nextQ > questions.value.length) {
             await db.from('game_state').update({ status: 'FINISHED' }).eq('id', 1);
-            fetchLeaderboard();
             return;
           }
           await db.from('game_state').update({ current_q: nextQ, status: 'PLAYING', start_time: Date.now() }).eq('id', 1);
@@ -243,6 +268,7 @@
             let addScore = 10 + timer.value; 
             myScore.value += addScore;
             await db.from('players').update({ score: myScore.value }).eq('id', playerId.value);
+            fetchState();
           }
         };
 
@@ -255,7 +281,7 @@
         };
 
         return {
-          isScreenView, status, currentQ, playerCount, inputName, nickname, joined,
+          isScreenView, status, currentQ, playerCount, playersList, inputName, nickname, joined,
           questions, currentQuestion, selectedOption, submitted, timer, myScore, leaderboard,
           joinGame, startGame, nextQuestion, submitAnswer, resetGame
         };
