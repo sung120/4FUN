@@ -12,9 +12,10 @@
 <body class="bg-pink-50 text-gray-800">
   <div id="app" class="min-h-screen flex flex-col justify-between p-4">
     
-    <!-- 大螢幕 / 控制台端 (?view=screen) -->
+    <!-- 大螢幕端 (?view=screen) -->
     <template v-if="isScreenView">
       <div class="max-w-6xl mx-auto w-full flex-1 flex flex-col justify-between py-2">
+        <!-- 大廳等待畫面 -->
         <div v-if="status === 'LOBBY' || currentQ === 0" class="flex-1 flex flex-col items-center justify-center bg-white p-12 rounded-3xl shadow-2xl text-center my-auto">
           <h1 class="text-5xl font-extrabold text-pink-600 mb-6">💕 婚禮互動問答大廳</h1>
           <p class="text-2xl text-gray-600 mb-8">請掃描 QR Code 或輸入網址加入遊戲！</p>
@@ -28,37 +29,73 @@
           </div>
         </div>
 
-        <template v-else>
-          <div class="bg-white p-6 rounded-2xl shadow-xl mb-4 flex justify-between items-center">
-            <span class="text-2xl font-bold text-pink-600">第 {{ currentQ }} 題 ｜ 狀態：{{ status }}</span>
-            <button @click="nextQuestion" class="bg-pink-500 text-white px-6 py-2 rounded-xl font-bold">下一題 / 顯示答案</button>
+        <!-- 遊戲進行中畫面 -->
+        <div v-else class="flex-1 flex flex-col justify-between bg-white p-8 rounded-3xl shadow-2xl my-auto">
+          <div class="flex justify-between items-center border-b pb-4 mb-6">
+            <span class="text-3xl font-extrabold text-pink-600">第 {{ currentQ }} 題 / 共 {{ questions.length }} 題</span>
+            <button @click="nextQuestion" class="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-2xl font-bold text-lg shadow">下一題 / 結束本題</button>
           </div>
-        </template>
+          
+          <div class="text-center my-auto">
+            <h2 class="text-4xl font-bold text-gray-800 mb-10">{{ currentQuestion.title }}</h2>
+            <div class="grid grid-cols-2 gap-6 max-w-4xl mx-auto">
+              <div v-for="(opt, idx) in currentQuestion.options" :key="idx" class="bg-pink-50 border-2 border-pink-200 p-6 rounded-2xl text-2xl font-semibold text-gray-700 shadow">
+                {{ ['A', 'B', 'C', 'D'][idx] }}. {{ opt }}
+              </div>
+            </div>
+          </div>
+          <div class="text-center text-gray-400 text-lg mt-6">請賓客們在手機上作答！</div>
+        </div>
       </div>
     </template>
 
     <!-- 手機答題端 -->
     <template v-else>
       <div class="max-w-md mx-auto w-full flex-1 flex flex-col justify-center py-4">
+        <!-- 登入畫面 -->
         <div v-if="!joined" class="bg-white p-6 rounded-2xl shadow-xl text-center">
           <h2 class="text-2xl font-bold text-pink-600 mb-2">💕 婚禮即時搶答</h2>
+          <p class="text-gray-500 mb-4">輸入名字即可參與互動抽獎！</p>
           <input v-model="inputName" type="text" placeholder="請輸入您的姓名或桌號" class="w-full border p-3 rounded-lg mb-4 text-center text-lg">
-          <button @click="joinGame" class="w-full bg-pink-500 text-white py-3 rounded-lg font-bold text-lg">進入遊戲</button>
+          <button @click="joinGame" class="w-full bg-pink-500 text-white py-3 rounded-lg font-bold text-lg shadow">進入遊戲</button>
         </div>
-        <div v-else class="bg-white p-6 rounded-2xl shadow-xl text-center">
-          <h2 class="text-xl font-bold text-pink-600 mb-2">歡迎，{{ nickname }}！</h2>
-          <p class="text-gray-600">目前遊戲狀態：<span class="font-bold text-indigo-600">{{ status }}</span></p>
+
+        <!-- 遊戲進行中答題畫面 -->
+        <div v-else class="bg-white p-6 rounded-2xl shadow-xl">
+          <div class="flex justify-between items-center mb-4 border-b pb-2">
+            <span class="font-bold text-pink-600">玩家：{{ nickname }}</span>
+            <span class="text-sm text-gray-500">狀態：{{ status }}</span>
+          </div>
+
+          <!-- 等待開始 -->
+          <div v-if="status === 'LOBBY' || currentQ === 0" class="text-center py-10">
+            <div class="text-6xl mb-4">⏳</div>
+            <h3 class="text-xl font-bold text-gray-700">請等待新郎新娘開始遊戲...</h3>
+          </div>
+
+          <!-- 作答中 -->
+          <div v-else>
+            <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">第 {{ currentQ }} 題：{{ currentQuestion.title }}</h3>
+            <div class="flex flex-col gap-3">
+              <button v-for="(opt, idx) in currentQuestion.options" :key="idx" 
+                      @click="submitAnswer(idx)"
+                      :class="selectedOption === idx ? 'bg-pink-600 text-white' : 'bg-pink-50 hover:bg-pink-100 text-gray-800 border border-pink-200'"
+                      class="p-4 rounded-xl font-bold text-lg transition shadow-sm">
+                {{ ['A', 'B', 'C', 'D'][idx] }}. {{ opt }}
+              </button>
+            </div>
+            <div v-if="submitted" class="mt-4 text-center text-green-600 font-bold">✓ 答案已送出，等待公布結果！</div>
+          </div>
         </div>
       </div>
     </template>
   </div>
 
   <script>
-    const { createApp, ref, onMounted } = Vue;
+    const { createApp, ref, computed, onMounted } = Vue;
 
     const SUPABASE_URL = 'https://qpqdpesalezkhdxupsyh.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable__lE9VwdNJUzNwVqURD5I7w_PJCf6CSs';
-    // 這裡改成了 const db，避開全局衝突
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     createApp({
@@ -71,6 +108,24 @@
         const nickname = ref(localStorage.getItem('wedding_name') || '');
         const playerId = ref(localStorage.getItem('wedding_pid') || '');
         const joined = ref(!!playerId.value);
+        const selectedOption = ref(null);
+        const submitted = ref(false);
+
+        // 題目清單（你可以隨時在這裡修改題目與選項！）
+        const questions = ref([
+          { title: "新郎和新娘是在哪裡認識的？", options: ["大學社團", "交友軟體", "工作職場", "朋友介紹"] },
+          { title: "誰先展開追求的？", options: ["新郎", "新娘", "同時一見鍾情", "雙雙被媒妁之言推坑"] },
+          { title: "平常在家裡誰負責洗碗？", options: ["新郎", "新娘", "外食族不用洗", "猜拳決定"] },
+          { title: "約會時通常是誰比較常遲到？", options: ["新郎", "新娘", "兩人都超級準時", "每次都互相等對方"] },
+          { title: "新郎身上最大的優點是？", options: ["脾氣好又溫柔", "帥氣又幽默", "會做家事", "以上皆是（送分題）"] }
+        ]);
+
+        const currentQuestion = computed(() => {
+          if (currentQ.value > 0 && currentQ.value <= questions.value.length) {
+            return questions.value[currentQ.value - 1];
+          }
+          return { title: "", options: [] };
+        });
 
         const fetchState = async () => {
           let { data } = await db.from('game_state').select('*').eq('id', 1).single();
@@ -84,11 +139,14 @@
 
         onMounted(() => {
           fetchState();
-
           db.channel('public:game_state')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, payload => {
               status.value = payload.new.status;
-              currentQ.value = payload.new.current_q;
+              if (payload.new.current_q !== currentQ.value) {
+                currentQ.value = payload.new.current_q;
+                selectedOption.value = null; // 換題時重置個人選擇
+                submitted.value = false;
+              }
             })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => {
               fetchState();
@@ -113,11 +171,21 @@
 
         const nextQuestion = async () => {
           let nextQ = currentQ.value + 1;
+          if (nextQ > questions.value.length) {
+            alert('已經是最後一題囉！');
+            return;
+          }
           await db.from('game_state').update({ current_q: nextQ, status: 'PLAYING', start_time: Date.now() }).eq('id', 1);
         };
 
+        const submitAnswer = (idx) => {
+          selectedOption.value = idx;
+          submitted.value = true;
+          // 這裡可以擴充把答案寫入資料庫記錄分數
+        };
+
         const resetGame = async () => {
-          if (confirm('確定重置？')) {
+          if (confirm('確定重置遊戲？')) {
             await db.from('players').delete().neq('id', '0');
             await db.from('game_state').update({ current_q: 0, status: 'LOBBY', start_time: 0 }).eq('id', 1);
             location.reload();
@@ -126,7 +194,8 @@
 
         return {
           isScreenView, status, currentQ, playerCount, inputName, nickname, joined,
-          joinGame, startGame, nextQuestion, resetGame
+          questions, currentQuestion, selectedOption, submitted,
+          joinGame, startGame, nextQuestion, submitAnswer, resetGame
         };
       }
     }).mount('#app');
