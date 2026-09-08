@@ -29,6 +29,13 @@
           </div>
         </div>
 
+        <!-- 遊戲結束結算畫面 -->
+        <div v-else-if="status === 'FINISHED'" class="flex-1 flex flex-col items-center justify-center bg-white p-12 rounded-3xl shadow-2xl text-center my-auto">
+          <h1 class="text-6xl font-extrabold text-pink-600 mb-6">🎉 遊戲圓滿結束！</h1>
+          <p class="text-3xl text-gray-700 mb-10">感謝各位親朋好友的熱情參與，祝新人永浴愛河！</p>
+          <button @click="resetGame" class="bg-red-500 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">🔄 重新開始遊戲</button>
+        </div>
+
         <!-- 遊戲進行中畫面 -->
         <div v-else class="flex-1 flex flex-col justify-between bg-white p-8 rounded-3xl shadow-2xl my-auto">
           <div class="flex justify-between items-center border-b pb-4 mb-6">
@@ -58,6 +65,12 @@
           <p class="text-gray-500 mb-4">輸入名字即可參與互動抽獎！</p>
           <input v-model="inputName" type="text" placeholder="請輸入您的姓名或桌號" class="w-full border p-3 rounded-lg mb-4 text-center text-lg">
           <button @click="joinGame" class="w-full bg-pink-500 text-white py-3 rounded-lg font-bold text-lg shadow">進入遊戲</button>
+        </div>
+
+        <!-- 手機端結算畫面 -->
+        <div v-else-if="status === 'FINISHED'" class="bg-white p-6 rounded-2xl shadow-xl text-center py-10">
+          <h2 class="text-3xl font-bold text-pink-600 mb-4">🎉 互動問答圓滿結束！</h2>
+          <p class="text-gray-600 text-lg">謝謝 <span class="font-bold text-pink-600">{{ nickname }}</span> 的熱情參與！</p>
         </div>
 
         <!-- 遊戲進行中答題畫面 -->
@@ -111,7 +124,6 @@
         const selectedOption = ref(null);
         const submitted = ref(false);
 
-        // 題目清單（你可以隨時在這裡修改題目與選項！）
         const questions = ref([
           { title: "新郎和新娘是在哪裡認識的？", options: ["大學社團", "交友軟體", "工作職場", "朋友介紹"] },
           { title: "誰先展開追求的？", options: ["新郎", "新娘", "同時一見鍾情", "雙雙被媒妁之言推坑"] },
@@ -144,7 +156,7 @@
               status.value = payload.new.status;
               if (payload.new.current_q !== currentQ.value) {
                 currentQ.value = payload.new.current_q;
-                selectedOption.value = null; // 換題時重置個人選擇
+                selectedOption.value = ref(null).value;
                 submitted.value = false;
               }
             })
@@ -171,8 +183,9 @@
 
         const nextQuestion = async () => {
           let nextQ = currentQ.value + 1;
+          // 如果超過最後一題，就將狀態切換為 FINISHED 結算畫面
           if (nextQ > questions.value.length) {
-            alert('已經是最後一題囉！');
+            await db.from('game_state').update({ current_q: questions.value.length, status: 'FINISHED', start_time: Date.now() }).eq('id', 1);
             return;
           }
           await db.from('game_state').update({ current_q: nextQ, status: 'PLAYING', start_time: Date.now() }).eq('id', 1);
@@ -181,7 +194,6 @@
         const submitAnswer = (idx) => {
           selectedOption.value = idx;
           submitted.value = true;
-          // 這裡可以擴充把答案寫入資料庫記錄分數
         };
 
         const resetGame = async () => {
