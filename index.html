@@ -96,7 +96,8 @@
         <div v-else-if="status === 'FINISHED'" class="bg-white p-6 rounded-2xl shadow-xl text-center py-10">
           <h2 class="text-3xl font-bold text-pink-600 mb-4">🎉 互動問答圓滿結束！</h2>
           <p class="text-gray-600 text-lg mb-4">謝謝 <span class="font-bold text-pink-600">{{ nickname }}</span> 的熱情參與！</p>
-          <div class="text-2xl font-bold text-pink-500 bg-pink-50 p-4 rounded-xl border border-pink-200">你的最終得分：{{ myScore }} 分</div>
+          <div class="text-2xl font-bold text-pink-500 bg-pink-50 p-4 rounded-xl border border-pink-200 mb-6">你的最終得分：{{ myScore }} 分</div>
+          <button @click="forceRejoin" class="w-full bg-gray-500 hover:bg-gray-600 text-white py-3 rounded-lg font-bold text-lg shadow">🔄 重新輸入名字加入</button>
         </div>
 
         <!-- 遊戲進行中答題畫面 -->
@@ -109,7 +110,8 @@
           <!-- 等待開始 -->
           <div v-if="status === 'LOBBY' || currentQ === 0" class="text-center py-10">
             <div class="text-6xl mb-4">⏳</div>
-            <h3 class="text-xl font-bold text-gray-700">請等待新郎新娘開始遊戲...</h3>
+            <h3 class="text-xl font-bold text-gray-700 mb-4">您已成功加入，請等待新郎新娘開始遊戲...</h3>
+            <button @click="forceRejoin" class="text-sm text-pink-500 underline">換個名字或重新加入？</button>
           </div>
 
           <!-- 作答中 -->
@@ -181,9 +183,13 @@
           if (data) {
             status.value = data.status;
             currentQ.value = data.current_q;
+
+            // 如果主持人按了重置回到 LOBBY，自動清除手機端的登入狀態，讓玩家可以重新加入
+            if (data.status === 'LOBBY' && data.current_q === 0) {
+              // 保持 joined 為 true 讓畫面停在等待區，但提供隨時重新加入/換名字的按鈕
+            }
           }
 
-          // 抓取所有玩家清單與即時排行榜
           let { data: pData, count } = await db.from('players').select('*', { count: 'exact' }).order('score', { ascending: false });
           if (pData) {
             playersList.value = pData;
@@ -193,7 +199,14 @@
 
           if (playerId.value) {
             let myData = pData?.find(p => p.id === playerId.value);
-            if (myData) myScore.value = myData.score;
+            if (myData) {
+              myScore.value = myData.score;
+            } else {
+              // 如果資料庫中找不到這個玩家 ID（被重置清空了），自動強制登出讓玩家重新輸入名字
+              joined.value = false;
+              localStorage.removeItem('wedding_pid');
+              localStorage.removeItem('wedding_name');
+            }
           }
         };
 
@@ -204,6 +217,13 @@
             .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, payload => {
               status.value = payload.new.status;
               currentQ.value = payload.new.current_q;
+              
+              if (payload.new.status === 'LOBBY' && payload.new.current_q === 0) {
+                // 遊戲被重置時，自動把答題狀態歸零
+                selectedOption.value = null;
+                submitted.value = false;
+              }
+
               if (payload.new.status === 'PLAYING') {
                 selectedOption.value = null;
                 submitted.value = false;
@@ -245,6 +265,15 @@
           fetchState();
         };
 
+        const forceRejoin = () => {
+          localStorage.removeItem('wedding_pid');
+          localStorage.removeItem('wedding_name');
+          playerId.value = '';
+          nickname.value = '';
+          joined.value = false;
+          inputName.value = '';
+        };
+
         const startGame = async () => {
           await db.from('game_state').update({ current_q: 1, status: 'PLAYING', start_time: Date.now() }).eq('id', 1);
         };
@@ -273,17 +302,17 @@
         };
 
         const resetGame = async () => {
-          if (confirm('確定重置遊戲？')) {
+          if (confirm('確定重置遊戲？這將會清空所有玩家與分數！')) {
+            await db.from('players'].delete().neq('id', '0'); // 修正語法
             await db.from('players').delete().neq('id', '0');
             await db.from('game_state').update({ current_q: 0, status: 'LOBBY', start_time: 0 }).eq('id', 1);
-            location.reload();
           }
         };
 
         return {
           isScreenView, status, currentQ, playerCount, playersList, inputName, nickname, joined,
           questions, currentQuestion, selectedOption, submitted, timer, myScore, leaderboard,
-          joinGame, startGame, nextQuestion, submitAnswer, resetGame
+          joinGame, forceRejoin, startGame, nextQuestion, submitAnswer, resetGame
         };
       }
     }).mount('#app');
