@@ -183,11 +183,6 @@
           if (data) {
             status.value = data.status;
             currentQ.value = data.current_q;
-
-            // 如果主持人按了重置回到 LOBBY，自動清除手機端的登入狀態，讓玩家可以重新加入
-            if (data.status === 'LOBBY' && data.current_q === 0) {
-              // 保持 joined 為 true 讓畫面停在等待區，但提供隨時重新加入/換名字的按鈕
-            }
           }
 
           let { data: pData, count } = await db.from('players').select('*', { count: 'exact' }).order('score', { ascending: false });
@@ -202,7 +197,6 @@
             if (myData) {
               myScore.value = myData.score;
             } else {
-              // 如果資料庫中找不到這個玩家 ID（被重置清空了），自動強制登出讓玩家重新輸入名字
               joined.value = false;
               localStorage.removeItem('wedding_pid');
               localStorage.removeItem('wedding_name');
@@ -219,7 +213,6 @@
               currentQ.value = payload.new.current_q;
               
               if (payload.new.status === 'LOBBY' && payload.new.current_q === 0) {
-                // 遊戲被重置時，自動把答題狀態歸零
                 selectedOption.value = null;
                 submitted.value = false;
               }
@@ -303,7 +296,6 @@
 
         const resetGame = async () => {
           if (confirm('確定重置遊戲？這將會清空所有玩家與分數！')) {
-            await db.from('players'].delete().neq('id', '0'); // 修正語法
             await db.from('players').delete().neq('id', '0');
             await db.from('game_state').update({ current_q: 0, status: 'LOBBY', start_time: 0 }).eq('id', 1);
           }
