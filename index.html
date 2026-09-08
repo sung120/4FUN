@@ -41,7 +41,7 @@
 
         <div v-else class="flex-1 flex flex-col justify-between bg-white p-8 rounded-3xl shadow-2xl my-auto">
           <div class="flex justify-between items-center border-b pb-4 mb-6">
-            <span class="text-3xl font-extrabold text-pink-600">第 {{ currentQ }} 題 / 共 {{ questions.length }} 題 ｜ 倒數計時：<span class="text-red-500">{{ timer }}</span> 秒</span>
+            <span class="text-3xl font-extrabold text-pink-600">第 {{ currentQ }} 題 / 共 {{ questions.length }} 題 ｜ 倒數計時：<span :class="timer === 0 ? 'text-gray-400' : 'text-red-500'">{{ timer }}</span> 秒</span>
             <button @click="nextQuestion" class="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-2xl font-bold text-lg shadow">下一題 / 結束本題</button>
           </div>
           
@@ -49,10 +49,12 @@
             <h2 class="text-4xl font-bold text-gray-800 mb-10">{{ currentQuestion.question }}</h2>
             <div class="grid grid-cols-2 gap-6 max-w-4xl mx-auto">
               <div v-for="(opt, idx) in [currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d]" :key="idx" 
-                   class="bg-pink-50 border-2 border-pink-200 p-6 rounded-2xl text-2xl font-semibold text-gray-700 shadow">
+                   :class="timer === 0 && ['OptionA', 'OptionB', 'OptionC', 'OptionD'][idx] === currentQuestion.answer ? 'bg-green-300 border-green-600 ring-4 ring-green-400' : 'bg-pink-50 border-pink-200'"
+                   class="border-2 p-6 rounded-2xl text-2xl font-semibold text-gray-700 shadow transition-all">
                 {{ ['A', 'B', 'C', 'D'][idx] }}. {{ opt }}
               </div>
             </div>
+            <div v-if="timer === 0" class="mt-8 text-2xl font-bold text-green-600 animate-bounce">✨ 時間到！正確答案已顯現 ✨</div>
           </div>
         </div>
       </div>
@@ -77,7 +79,7 @@
         <div v-else class="bg-white p-6 rounded-2xl shadow-xl">
           <div class="flex justify-between items-center mb-4 border-b pb-2">
             <span class="font-bold text-pink-600">玩家：{{ nickname }}</span>
-            <span class="text-sm font-bold text-red-500">⏳ {{ timer }}s</span>
+            <span class="text-sm font-bold" :class="timer === 0 ? 'text-gray-400' : 'text-red-500'">⏳ {{ timer === 0 ? '時間到' : timer + 's' }}</span>
           </div>
 
           <div v-if="status === 'LOBBY' || currentQ === 0" class="text-center py-10">
@@ -90,12 +92,17 @@
             <div class="flex flex-col gap-3">
               <button v-for="(opt, idx) in [currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d]" :key="idx" 
                       @click="submitAnswer(idx)"
-                      :class="selectedOption === idx ? 'bg-pink-600 text-white' : 'bg-pink-50 hover:bg-pink-100 text-gray-800 border border-pink-200'"
+                      :disabled="timer === 0 || submitted"
+                      :class="[
+                        selectedOption === idx ? 'bg-pink-600 text-white' : 'bg-pink-50 hover:bg-pink-100 text-gray-800 border border-pink-200',
+                        (timer === 0 || submitted) ? 'opacity-70 cursor-not-allowed' : ''
+                      ]"
                       class="p-4 rounded-xl font-bold text-lg transition shadow-sm">
                 {{ ['A', 'B', 'C', 'D'][idx] }}. {{ opt }}
               </button>
             </div>
             <div v-if="submitted" class="mt-4 text-center text-green-600 font-bold">✓ 答案已送出！</div>
+            <div v-else-if="timer === 0" class="mt-4 text-center text-red-500 font-bold">❌ 時間到，來不及作答！</div>
           </div>
         </div>
       </div>
@@ -227,7 +234,7 @@
         };
 
         const submitAnswer = async (idx) => {
-          if (submitted.value) return;
+          if (submitted.value || timer.value === 0) return;
           selectedOption.value = idx;
           submitted.value = true;
 
