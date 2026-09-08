@@ -44,16 +44,15 @@
         <!-- 遊戲進行中畫面 -->
         <div v-else class="flex-1 flex flex-col justify-between bg-white p-8 rounded-3xl shadow-2xl my-auto">
           <div class="flex justify-between items-center border-b pb-4 mb-6">
-            <span class="text-3xl font-extrabold text-pink-600">第 {{ currentQ }} 題 ｜ 倒數計時：<span class="text-red-500">{{ timer }}</span> 秒</span>
+            <span class="text-3xl font-extrabold text-pink-600">第 {{ currentQ }} 題 / 共 {{ questions.length }} 題 ｜ 倒數計時：<span class="text-red-500">{{ timer }}</span> 秒</span>
             <button @click="nextQuestion" class="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-2xl font-bold text-lg shadow">下一題 / 結束本題</button>
           </div>
           
           <div class="text-center my-auto" v-if="currentQuestion">
-            <h2 class="text-4xl font-bold text-gray-800 mb-10">{{ currentQuestion.title }}</h2>
+            <h2 class="text-4xl font-bold text-gray-800 mb-10">{{ currentQuestion.question }}</h2>
             <div class="grid grid-cols-2 gap-6 max-w-4xl mx-auto">
-              <div v-for="(opt, idx) in [currentQuestion.opt_a, currentQuestion.opt_b, currentQuestion.opt_c, currentQuestion.opt_d]" :key="idx" 
-                   :class="status === 'ANSWERED' && idx === currentQuestion.correct ? 'bg-green-200 border-green-500' : 'bg-pink-50 border-pink-200'"
-                   class="border-2 p-6 rounded-2xl text-2xl font-semibold text-gray-700 shadow">
+              <div v-for="(opt, idx) in [currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d]" :key="idx" 
+                   class="bg-pink-50 border-2 border-pink-200 p-6 rounded-2xl text-2xl font-semibold text-gray-700 shadow">
                 {{ ['A', 'B', 'C', 'D'][idx] }}. {{ opt }}
               </div>
             </div>
@@ -95,9 +94,9 @@
 
           <!-- 作答中 -->
           <div v-else-if="currentQuestion">
-            <h3 class="text-lg font-bold text-gray-800 mb-4 text-center">第 {{ currentQ }} 題：{{ currentQuestion.title }}</h3>
+            <h3 class="text-lg font-bold text-gray-800 mb-4 text-center">第 {{ currentQ }} 題：{{ currentQuestion.question }}</h3>
             <div class="flex flex-col gap-3">
-              <button v-for="(opt, idx) in [currentQuestion.opt_a, currentQuestion.opt_b, currentQuestion.opt_c, currentQuestion.opt_d]" :key="idx" 
+              <button v-for="(opt, idx) in [currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d]" :key="idx" 
                       @click="submitAnswer(idx)"
                       :class="selectedOption === idx ? 'bg-pink-600 text-white' : 'bg-pink-50 hover:bg-pink-100 text-gray-800 border border-pink-200'"
                       class="p-4 rounded-xl font-bold text-lg transition shadow-sm">
@@ -138,10 +137,12 @@
         const leaderboard = ref([]);
         let timerInterval = null;
 
-        // 讀取 Supabase 題庫
+        // 從 Supabase 抓取題庫
         const fetchQuestions = async () => {
           let { data } = await db.from('questions').select('*').order('id', { ascending: true });
-          if (data) questions.value = data;
+          if (data) {
+            questions.value = data;
+          }
         };
 
         const fetchState = async () => {
@@ -236,8 +237,9 @@
           selectedOption.value = idx;
           submitted.value = true;
 
-          // 計分邏輯：答對加分（根據剩餘時間計算加權分數）
-          if (currentQuestion.value && idx === currentQuestion.value.correct) {
+          // 對應資料庫的 answer 欄位（例如 'OptionA', 'OptionB', 'OptionC', 'OptionD'）
+          const mapOpt = ['OptionA', 'OptionB', 'OptionC', 'OptionD'];
+          if (currentQuestion.value && mapOpt[idx] === currentQuestion.value.answer) {
             let addScore = 10 + timer.value; 
             myScore.value += addScore;
             await db.from('players').update({ score: myScore.value }).eq('id', playerId.value);
