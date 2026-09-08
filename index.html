@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>婚禮即時互動問答</title>
-  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
@@ -15,7 +15,6 @@
     <!-- 大螢幕端 (?view=screen) -->
     <template v-if="isScreenView">
       <div class="max-w-6xl mx-auto w-full flex-1 flex flex-col justify-between py-2">
-        <!-- 大廳等待畫面 -->
         <div v-if="status === 'LOBBY' || currentQ === 0" class="flex-1 flex flex-col items-center justify-center bg-white p-12 rounded-3xl shadow-2xl text-center my-auto">
           <h1 class="text-5xl font-extrabold text-pink-600 mb-6">💕 婚禮互動問答大廳</h1>
           <p class="text-2xl text-gray-600 mb-8">請掃描 QR Code 或輸入網址加入遊戲！</p>
@@ -29,7 +28,6 @@
           </div>
         </div>
 
-        <!-- 遊戲結束結算與排行榜畫面 -->
         <div v-else-if="status === 'FINISHED'" class="flex-1 flex flex-col items-center justify-center bg-white p-12 rounded-3xl shadow-2xl text-center my-auto">
           <h1 class="text-5xl font-extrabold text-pink-600 mb-6">🏆 最終英雄榜</h1>
           <div class="w-full max-w-xl bg-pink-50 p-6 rounded-2xl mb-8 border-2 border-pink-200">
@@ -41,7 +39,6 @@
           <button @click="resetGame" class="bg-red-500 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">🔄 重新開始遊戲</button>
         </div>
 
-        <!-- 遊戲進行中畫面 -->
         <div v-else class="flex-1 flex flex-col justify-between bg-white p-8 rounded-3xl shadow-2xl my-auto">
           <div class="flex justify-between items-center border-b pb-4 mb-6">
             <span class="text-3xl font-extrabold text-pink-600">第 {{ currentQ }} 題 / 共 {{ questions.length }} 題 ｜ 倒數計時：<span class="text-red-500">{{ timer }}</span> 秒</span>
@@ -64,7 +61,6 @@
     <!-- 手機答題端 -->
     <template v-else>
       <div class="max-w-md mx-auto w-full flex-1 flex flex-col justify-center py-4">
-        <!-- 登入畫面 -->
         <div v-if="!joined" class="bg-white p-6 rounded-2xl shadow-xl text-center">
           <h2 class="text-2xl font-bold text-pink-600 mb-2">💕 婚禮即時搶答</h2>
           <p class="text-gray-500 mb-4">輸入名字即可參與互動搶答！</p>
@@ -72,27 +68,23 @@
           <button @click="joinGame" class="w-full bg-pink-500 text-white py-3 rounded-lg font-bold text-lg shadow">進入遊戲</button>
         </div>
 
-        <!-- 手機端結算畫面 -->
         <div v-else-if="status === 'FINISHED'" class="bg-white p-6 rounded-2xl shadow-xl text-center py-10">
           <h2 class="text-3xl font-bold text-pink-600 mb-4">🎉 互動問答圓滿結束！</h2>
           <p class="text-gray-600 text-lg mb-4">謝謝 <span class="font-bold text-pink-600">{{ nickname }}</span> 的熱情參與！</p>
           <div class="text-2xl font-bold text-pink-500 bg-pink-50 p-4 rounded-xl border border-pink-200">你的最終得分：{{ myScore }} 分</div>
         </div>
 
-        <!-- 遊戲進行中答題畫面 -->
         <div v-else class="bg-white p-6 rounded-2xl shadow-xl">
           <div class="flex justify-between items-center mb-4 border-b pb-2">
             <span class="font-bold text-pink-600">玩家：{{ nickname }}</span>
             <span class="text-sm font-bold text-red-500">⏳ {{ timer }}s</span>
           </div>
 
-          <!-- 等待開始 -->
           <div v-if="status === 'LOBBY' || currentQ === 0" class="text-center py-10">
             <div class="text-6xl mb-4">⏳</div>
             <h3 class="text-xl font-bold text-gray-700">請等待新郎新娘開始遊戲...</h3>
           </div>
 
-          <!-- 作答中 -->
           <div v-else-if="currentQuestion">
             <h3 class="text-lg font-bold text-gray-800 mb-4 text-center">第 {{ currentQ }} 題：{{ currentQuestion.question }}</h3>
             <div class="flex flex-col gap-3">
@@ -128,7 +120,6 @@
         const playerId = ref(localStorage.getItem('wedding_pid') || '');
         const joined = ref(!!playerId.value);
         
-        // 雙保險內建題庫（對應你的 Supabase 欄位格式）
         const questions = ref([
           { id: 1, question: "他們養了幾隻貓？", option_a: "1", option_b: "2", option_c: "3", option_d: "4", answer: "OptionC" },
           { id: 2, question: "他們誰比較老？", option_a: "新郎", option_b: "新娘", option_c: "一樣老", option_d: "都18歲", answer: "OptionA" },
@@ -152,7 +143,7 @@
         let timerInterval = null;
 
         const fetchState = async () => {
-          let { data } = await db.from('game_state').select('*').eq('id', 1).single();
+          let { data } = await db.from('game_state').select('*').eq('id', 1).maybeSingle();
           if (data) {
             status.value = data.status;
             currentQ.value = data.current_q;
@@ -161,7 +152,7 @@
           playerCount.value = count || 0;
 
           if (playerId.value) {
-            let { data: pData } = await db.from('players').select('score').eq('id', playerId.value).single();
+            let { data: pData } = await db.from('players').select('score').eq('id', playerId.value).maybeSingle();
             if (pData) myScore.value = pData.score;
           }
         };
@@ -208,7 +199,6 @@
         const joinGame = async () => {
           if (!inputName.value.trim()) return alert('請輸入名字');
           const id = 'P_' + Math.random().toString(36).substring(2, 9);
-          // 確保寫入玩家時不報錯
           const { error } = await db.from('players').insert([{ id, name: inputName.value.trim(), score: 0 }]);
           if (error) {
             alert('加入失敗，請再試一次');
