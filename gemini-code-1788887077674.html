@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>婚禮即時互動問答</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-pink-50 text-gray-800">
+  <div id="app" class="min-h-screen flex flex-col justify-between p-4">
+    
+    <!-- 大螢幕 / 控制台端 (?view=screen) -->
+    <template v-if="isScreenView">
+      <div class="max-w-6xl mx-auto w-full flex-1 flex flex-col justify-between py-2">
+        <div v-if="status === 'LOBBY' || currentQ === 0" class="flex-1 flex flex-col items-center justify-center bg-white p-12 rounded-3xl shadow-2xl text-center my-auto">
+          <h1 class="text-5xl font-extrabold text-pink-600 mb-6">💕 婚禮互動問答大廳</h1>
+          <p class="text-2xl text-gray-600 mb-8">請掃描 QR Code 或輸入網址加入遊戲！</p>
+          <div class="bg-pink-100 border-4 border-pink-300 px-8 py-6 rounded-2xl mb-10">
+            <span class="text-3xl font-bold text-gray-700">目前參賽人數：</span>
+            <span class="text-5xl font-extrabold text-pink-600 ml-3">{{ playerCount }} 人</span>
+          </div>
+          <div class="flex gap-6">
+            <button @click="resetGame" class="bg-red-500 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">🔄 重置遊戲</button>
+            <button @click="startGame" class="bg-green-600 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">▶ 開始遊戲</button>
+          </div>
+        </div>
+
+        <template v-else>
+          <div class="bg-white p-6 rounded-2xl shadow-xl mb-4 flex justify-between items-center">
+            <span class="text-2xl font-bold text-pink-600">第 {{ currentQ }} 題 ｜ 狀態：{{ status }}</span>
+            <button @click="nextQuestion" class="bg-pink-500 text-white px-6 py-2 rounded-xl font-bold">下一題 / 顯示答案</button>
+          </div>
+        </template>
+      </div>
+    </template>
+
+    <!-- 手機答題端 -->
+    <template v-else>
+      <div class="max-w-md mx-auto w-full flex-1 flex flex-col justify-center py-4">
+        <div v-if="!joined" class="bg-white p-6 rounded-2xl shadow-xl text-center">
+          <h2 class="text-2xl font-bold text-pink-600 mb-2">💕 婚禮即時搶答</h2>
+          <input v-model="inputName" type="text" placeholder="請輸入您的姓名或桌號" class="w-full border p-3 rounded-lg mb-4 text-center text-lg">
+          <button @click="joinGame" class="w-full bg-pink-500 text-white py-3 rounded-lg font-bold text-lg">進入遊戲</button>
+        </div>
+        <div v-else class="bg-white p-6 rounded-2xl shadow-xl text-center">
+          <h2 class="text-xl font-bold text-pink-600 mb-2">歡迎，{{ nickname }}！</h2>
+          <p class="text-gray-600">目前遊戲狀態：<span class="font-bold text-indigo-600">{{ status }}</span></p>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <script>
+    const { createApp, ref, onMounted } = Vue;
+
+    // 填入你在 Supabase 複製的 URL 與 Anon Key
+    const SUPABASE_URL = '你的_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = '你的_SUPABASE_ANON_KEY';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    createApp({
+      setup() {
+        const isScreenView = ref(window.location.search.includes('view=screen'));
+        const status = ref('LOBBY');
+        const currentQ = ref(0);
+        const playerCount = ref(0);
+        const inputName = ref('');
+        const nickname = ref(localStorage.getItem('wedding_name') || '');
+        const playerId = ref(localStorage.getItem('wedding_pid') || '');
+        const joined = ref(!!playerId.value);
+
+        // 取得初始狀態與聽取即時廣播 (Realtime)
+        const fetchState = async () => {
+          let { data } = await supabase.from('game_state').select('*').eq('id', 1).single();
+          if (data) {
+            status.value = data.status;
+            currentQ.value = data.current_q;
+          }
+          let { count } = await supabase.from('players').select('*', { count: 'exact', head: true });
+          playerCount.value = count || 0;
+        };
+
+        onMounted(() => {
+          fetchState();
+
+          // 核心：透過 Supabase Realtime 監聽資料庫變動，達到 0 延遲同步！
+          supabase.channel('public:game_state')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, payload => {
+              status.value = payload.new.status;
+              currentQ.value = payload.new.current_q;
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => {
+              fetchState();
+            })
+            .subscribe();
+        });
+
+        const joinGame = async () => {
+          if (!inputName.value.trim()) return alert('請輸入名字');
+          const id = 'P_' + Math.random().toString(36.substring(2, 9));
+          await supabase.from('players').insert([{ id, name: inputName.value, score: 0 }]);
+          localStorage.setItem('wedding_pid', id);
+          localStorage.setItem('wedding_name', inputName.value);
+          playerId.value = id;
+          nickname.value = inputName.value;
+          joined.value = true;
+        };
+
+        const startGame = async () => {
+          await supabase.from('game_state').update({ current_q: 1, status: 'PLAYING', start_time: Date.now() }).eq('id', 1);
+        };
+
+        const nextQuestion = async () => {
+          let nextQ = currentQ.value + 1;
+          await supabase.from('game_state').update({ current_q: nextQ, status: 'PLAYING', start_time: Date.now() }).eq('id', 1);
+        };
+
+        const resetGame = async () => {
+          if (confirm('確定重置？')) {
+            await supabase.from('players').delete().neq('id', '0');
+            await supabase.from('game_state').update({ current_q: 0, status: 'LOBBY', start_time: 0 }).eq('id', 1);
+            location.reload();
+          }
+        };
+
+        return {
+          isScreenView, status, currentQ, playerCount, inputName, nickname, joined,
+          joinGame, startGame, nextQuestion, resetGame
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
