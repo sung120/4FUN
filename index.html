@@ -15,11 +15,14 @@
     <!-- 大螢幕端 (?view=screen) -->
     <template v-if="isScreenView">
       <div class="max-w-6xl mx-auto w-full flex-1 flex flex-col justify-between py-2">
+        <!-- 大廳等待畫面 -->
         <div v-if="status === 'LOBBY' || currentQ === 0" class="flex-1 flex flex-col items-center justify-center bg-white p-12 rounded-3xl shadow-2xl text-center my-auto">
           <h1 class="text-5xl font-extrabold text-pink-600 mb-6">💕 婚禮互動問答大廳</h1>
           <p class="text-2xl text-gray-600 mb-8">請掃描 QR Code 或輸入網址加入遊戲！</p>
           <div class="bg-pink-100 border-4 border-pink-300 px-8 py-6 rounded-2xl mb-10">
-            <span class="text-3xl font-bold text-gray-700">目前參賽人數：</span>
+            <span class="text-3xl font-bold text-gray-700">目前已連接題庫：</span>
+            <span class="text-5xl font-extrabold text-pink-600 ml-3">{{ questions.length }} 題</span>
+            <span class="text-3xl font-bold text-gray-700 ml-6">參賽人數：</span>
             <span class="text-5xl font-extrabold text-pink-600 ml-3">{{ playersList.length }} 人</span>
           </div>
           <div class="flex flex-wrap justify-center gap-3 max-w-2xl mb-8 max-h-40 overflow-y-auto">
@@ -33,6 +36,7 @@
           </div>
         </div>
 
+        <!-- 遊戲結束結算畫面 -->
         <div v-else-if="status === 'FINISHED'" class="flex-1 flex flex-col items-center justify-center bg-white p-12 rounded-3xl shadow-2xl text-center my-auto">
           <h1 class="text-5xl font-extrabold text-pink-600 mb-6">🏆 最終英雄榜</h1>
           <div class="w-full max-w-xl bg-pink-50 p-6 rounded-2xl mb-8 border-2 border-pink-200">
@@ -44,25 +48,32 @@
           <button @click="resetGame" class="bg-red-500 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">🔄 重新開始遊戲</button>
         </div>
 
+        <!-- 遊戲進行中畫面 -->
         <div v-else class="flex-1 flex flex-col justify-between bg-white p-8 rounded-3xl shadow-2xl my-auto">
           <div class="flex justify-between items-center border-b pb-4 mb-6">
             <span class="text-3xl font-extrabold text-pink-600">第 {{ currentQ }} 題 / 共 {{ questions.length }} 題 ｜ 倒數計時：<span :class="timer === 0 ? 'text-gray-400' : 'text-red-500'">{{ timer }}</span> 秒</span>
-            <button @click="nextQuestion" class="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-2xl font-bold text-lg shadow">下一題 / 結束本題</button>
+            <button @click="nextQuestion" class="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-2xl font-bold text-lg shadow">下一題 / 結算本題</button>
           </div>
           
           <div class="text-center my-auto" v-if="currentQuestion">
-            <h2 class="text-4xl font-bold text-gray-800 mb-10">{{ currentQuestion.question }}</h2>
-            <div class="grid grid-cols-2 gap-6 max-w-4xl mx-auto mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">{{ currentQuestion.question }}</h2>
+            
+            <!-- 如果資料庫有填圖片連結則顯示圖片 -->
+            <div v-if="currentQuestion.image" class="mb-6 flex justify-center">
+              <img :src="currentQuestion.image" alt="題目圖片" class="max-h-64 rounded-2xl shadow-md border-2 border-pink-200 object-contain">
+            </div>
+
+            <div class="grid grid-cols-2 gap-6 max-w-4xl mx-auto mb-6">
               <div v-for="(opt, idx) in [currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d]" :key="idx" 
                    :class="timer === 0 && ['OptionA', 'OptionB', 'OptionC', 'OptionD'][idx] === currentQuestion.answer ? 'bg-green-300 border-green-600 ring-4 ring-green-400' : 'bg-pink-50 border-pink-200'"
-                   class="border-2 p-6 rounded-2xl text-2xl font-semibold text-gray-700 shadow transition-all">
+                   class="border-2 p-5 rounded-2xl text-xl font-semibold text-gray-700 shadow transition-all">
                 {{ ['A', 'B', 'C', 'D'][idx] }}. {{ opt }}
               </div>
             </div>
             
-            <div class="bg-pink-50 p-4 rounded-2xl border border-pink-200 max-w-xl mx-auto">
-              <h3 class="font-bold text-pink-600 mb-2">🔥 即時戰況排行榜前三名</h3>
-              <div class="flex justify-around text-lg font-bold">
+            <div class="bg-pink-50 p-3 rounded-2xl border border-pink-200 max-w-xl mx-auto">
+              <h3 class="font-bold text-pink-600 mb-1 text-sm">🔥 即時戰況排行榜前三名</h3>
+              <div class="flex justify-around text-base font-bold">
                 <span v-for="(p, idx) in leaderboard.slice(0, 3)" :key="p.id">
                   {{ ['🥇','🥈','🥉'][idx] }} {{ p.name }} ({{ p.score }}分)
                 </span>
@@ -70,7 +81,7 @@
               </div>
             </div>
 
-            <div v-if="timer === 0" class="mt-6 text-2xl font-bold text-green-600 animate-bounce">✨ 時間到！正確答案已顯現 ✨</div>
+            <div v-if="timer === 0" class="mt-4 text-xl font-bold text-green-600 animate-bounce">✨ 時間到！公佈正確答案 ✨</div>
           </div>
         </div>
       </div>
@@ -79,6 +90,7 @@
     <!-- 手機答題端 -->
     <template v-else>
       <div class="max-w-md mx-auto w-full flex-1 flex flex-col justify-center py-4">
+        <!-- 登入畫面 -->
         <div v-if="!joined" class="bg-white p-6 rounded-2xl shadow-xl text-center">
           <h2 class="text-2xl font-bold text-pink-600 mb-2">💕 婚禮即時搶答</h2>
           <p class="text-gray-500 mb-4">輸入名字即可參與互動搶答！</p>
@@ -86,6 +98,7 @@
           <button @click="joinGame" class="w-full bg-pink-500 text-white py-3 rounded-lg font-bold text-lg shadow">進入遊戲</button>
         </div>
 
+        <!-- 手機端結算畫面 -->
         <div v-else-if="status === 'FINISHED'" class="bg-white p-6 rounded-2xl shadow-xl text-center py-10">
           <h2 class="text-3xl font-bold text-pink-600 mb-4">🎉 互動問答圓滿結束！</h2>
           <p class="text-gray-600 text-lg mb-4">謝謝 <span class="font-bold text-pink-600">{{ nickname }}</span> 的熱情參與！</p>
@@ -93,34 +106,48 @@
           <button @click="forceRejoin" class="w-full bg-gray-500 hover:bg-gray-600 text-white py-3 rounded-lg font-bold text-lg shadow">🔄 重新輸入名字加入</button>
         </div>
 
+        <!-- 遊戲進行中答題畫面 -->
         <div v-else class="bg-white p-6 rounded-2xl shadow-xl">
           <div class="flex justify-between items-center mb-4 border-b pb-2">
             <span class="font-bold text-pink-600">玩家：{{ nickname }} ({{ myScore }}分)</span>
             <span class="text-sm font-bold" :class="timer === 0 ? 'text-gray-400' : 'text-red-500'">⏳ {{ timer === 0 ? '時間到' : timer + 's' }}</span>
           </div>
 
+          <!-- 等待開始 -->
           <div v-if="status === 'LOBBY' || currentQ === 0" class="text-center py-10">
             <div class="text-6xl mb-4">⏳</div>
             <h3 class="text-xl font-bold text-gray-700 mb-4">您已成功加入，請等待新郎新娘開始遊戲...</h3>
             <button @click="forceRejoin" class="text-sm text-pink-500 underline">換個名字或重新加入？</button>
           </div>
 
+          <!-- 作答中 -->
           <div v-else-if="currentQuestion">
-            <h3 class="text-lg font-bold text-gray-800 mb-4 text-center">第 {{ currentQ }} 題：{{ currentQuestion.question }}</h3>
-            <div class="flex flex-col gap-3">
+            <h3 class="text-base font-bold text-gray-800 mb-2 text-center">第 {{ currentQ }} 題：{{ currentQuestion.question }}</h3>
+            
+            <!-- 手機端若有圖片也顯示縮圖 -->
+            <div v-if="currentQuestion.image" class="mb-3 flex justify-center">
+              <img :src="currentQuestion.image" alt="題目圖片" class="max-h-36 rounded-xl shadow border object-contain">
+            </div>
+
+            <div class="flex flex-col gap-2">
               <button v-for="(opt, idx) in [currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d]" :key="idx" 
                       @click="submitAnswer(idx)"
                       :disabled="timer === 0 || submitted"
                       :class="[
                         selectedOption === idx ? 'bg-pink-600 text-white' : 'bg-pink-50 hover:bg-pink-100 text-gray-800 border border-pink-200',
-                        (timer === 0 || submitted) ? 'opacity-70 cursor-not-allowed' : ''
+                        (timer === 0 || submitted) ? 'opacity-80 cursor-not-allowed' : ''
                       ]"
-                      class="p-4 rounded-xl font-bold text-lg transition shadow-sm">
+                      class="p-3 rounded-xl font-bold text-base transition shadow-sm">
                 {{ ['A', 'B', 'C', 'D'][idx] }}. {{ opt }}
               </button>
             </div>
-            <div v-if="submitted" class="mt-4 text-center text-green-600 font-bold">✓ 答案已送出！</div>
-            <div v-else-if="timer === 0" class="mt-4 text-center text-red-500 font-bold">❌ 時間到，來不及作答！</div>
+            
+            <div v-if="submitted && timer > 0" class="mt-3 text-center text-green-600 font-bold">✓ 答案已送出，等待時間到揭曉！</div>
+            <div v-if="timer === 0" class="mt-3 p-3 rounded-xl bg-gray-50 border text-center font-bold">
+              <span v-if="isCorrect" class="text-green-600 text-lg">🎉 答對了！獲得分數！</span>
+              <span v-else class="text-red-500 text-lg">❌ 答錯了或未作答！</span>
+              <div class="text-sm text-gray-600 mt-1">正確答案是：{{ currentQuestion.answer.replace('Option', '') }}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -146,16 +173,9 @@
         const playerId = ref(localStorage.getItem('wedding_pid') || '');
         const joined = ref(!!playerId.value);
         
-        const questions = ref([
-          { id: 1, question: "他們養了幾隻貓？", option_a: "1", option_b: "2", option_c: "3", option_d: "4", answer: "OptionC" },
-          { id: 2, question: "他們誰比較老？", option_a: "新郎", option_b: "新娘", option_c: "一樣老", option_d: "都18歲", answer: "OptionA" },
-          { id: 3, question: "他們把哪間婚紗公司拍倒閉了？", option_a: "沒有拍婚紗", option_b: "貝拉婚紗", option_c: "莎琪瑪婚紗攝影", option_d: "韓國藝匠", answer: "OptionD" },
-          { id: 4, question: "今天排隊順序是怎麼排序的？", option_a: "比體重重", option_b: "由左至右按照順序", option_c: "比身高高", option_d: "由前往後按照順序", answer: "OptionD" },
-          { id: 5, question: "那隻顏色的貓最喜歡新郎做報告/論文？", option_a: "白貓，小白", option_b: "橘貓，幾多多", option_c: "三花貓，樂樂", option_d: "以上皆是", answer: "OptionD" }
-        ]);
-
+        const questions = ref([]);
         const currentQuestion = computed(() => {
-          if (currentQ.value > 0 && currentQ.value <= questions.value.length) {
+          if (currentQ.value > 0 && questions.value.length > 0 && currentQ.value <= questions.value.length) {
             return questions.value[currentQ.value - 1];
           }
           return null;
@@ -163,10 +183,20 @@
 
         const selectedOption = ref(null);
         const submitted = ref(false);
+        const myAnswer = ref(null);
+        const isCorrect = ref(false);
         const timer = ref(15);
         const myScore = ref(0);
         const leaderboard = ref([]);
         let timerInterval = null;
+
+        // 從資料庫動態抓取全部題目（支援無限多題與圖片）
+        const fetchQuestions = async () => {
+          let { data } = await db.from('questions').select('*').order('id', { ascending: true });
+          if (data && data.length > 0) {
+            questions.value = data;
+          }
+        };
 
         const fetchState = async () => {
           let { data } = await db.from('game_state').select('*').eq('id', 1).maybeSingle();
@@ -195,6 +225,7 @@
         };
 
         onMounted(async () => {
+          await fetchQuestions();
           await fetchState();
 
           db.channel('public:game_state')
@@ -202,14 +233,11 @@
               status.value = payload.new.status;
               currentQ.value = payload.new.current_q;
               
-              if (payload.new.status === 'LOBBY' && payload.new.current_q === 0) {
-                selectedOption.value = null;
-                submitted.value = false;
-              }
-
               if (payload.new.status === 'PLAYING') {
                 selectedOption.value = null;
                 submitted.value = false;
+                myAnswer.value = null;
+                isCorrect.value = false;
                 startTimer();
               }
               fetchState();
@@ -223,11 +251,13 @@
         const startTimer = () => {
           clearInterval(timerInterval);
           timer.value = 15;
-          timerInterval = setInterval(() => {
+          timerInterval = setInterval(async () => {
             if (timer.value > 0) {
               timer.value--;
-            } else {
-              clearInterval(timerInterval);
+              if (timer.value === 0) {
+                // 當時間歸零時，前端自動核對答案並計算分數寫入資料庫（只計算一次）
+                await evaluateAnswer();
+              }
             }
           }, 1000);
         };
@@ -270,17 +300,29 @@
           await db.from('game_state').update({ current_q: nextQ, status: 'PLAYING', start_time: Date.now() }).eq('id', 1);
         };
 
-        const submitAnswer = async (idx) => {
+        // 玩家點擊選項（此時不馬上加分，僅記錄選擇）
+        const submitAnswer = (idx) => {
           if (submitted.value || timer.value === 0) return;
           selectedOption.value = idx;
           submitted.value = true;
+          myAnswer.value = idx;
+        };
 
-          const mapOpt = ['OptionA', 'OptionB', 'OptionC', 'OptionD'];
-          if (currentQuestion.value && mapOpt[idx] === currentQuestion.value.answer) {
-            let addScore = 10 + timer.value; 
-            myScore.value += addScore;
-            await db.from('players').update({ score: myScore.value }).eq('id', playerId.value);
-            fetchState();
+        // 時間到或切換題目時統一結算得分
+        const evaluateAnswer = async () => {
+          if (myAnswer.value !== null && currentQuestion.value) {
+            const mapOpt = ['OptionA', 'OptionB', 'OptionC', 'OptionD'];
+            if (mapOpt[myAnswer.value] === currentQuestion.value.answer) {
+              isCorrect.value = true;
+              let addScore = 10; // 答對基礎分
+              myScore.value += addScore;
+              await db.from('players').update({ score: myScore.value }).eq('id', playerId.value);
+              fetchState();
+            } else {
+              isCorrect.value = false;
+            }
+          } else {
+            isCorrect.value = false;
           }
         };
 
@@ -293,7 +335,7 @@
 
         return {
           isScreenView, status, currentQ, playerCount, playersList, inputName, nickname, joined,
-          questions, currentQuestion, selectedOption, submitted, timer, myScore, leaderboard,
+          questions, currentQuestion, selectedOption, submitted, isCorrect, timer, myScore, leaderboard,
           joinGame, forceRejoin, startGame, nextQuestion, submitAnswer, resetGame
         };
       }
