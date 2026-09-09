@@ -20,7 +20,7 @@
           <h1 class="text-5xl font-extrabold text-pink-600 mb-6">💕 婚禮互動問答大廳</h1>
           <p class="text-2xl text-gray-600 mb-8">請掃描 QR Code 或輸入網址加入遊戲！</p>
           <div class="bg-pink-100 border-4 border-pink-300 px-8 py-6 rounded-2xl mb-10">
-            <span class="text-3xl font-bold text-gray-700">目前已連接題庫：</span>
+            <span class="text-3xl font-bold text-gray-700">資料庫即時題庫：</span>
             <span class="text-5xl font-extrabold text-pink-600 ml-3">{{ questions.length }} 題</span>
             <span class="text-3xl font-bold text-gray-700 ml-6">參賽人數：</span>
             <span class="text-5xl font-extrabold text-pink-600 ml-3">{{ playersList.length }} 人</span>
@@ -58,7 +58,7 @@
           <div class="text-center my-auto" v-if="currentQuestion">
             <h2 class="text-3xl font-bold text-gray-800 mb-4">{{ currentQuestion.question }}</h2>
             
-            <!-- 如果資料庫有填圖片連結則顯示圖片 -->
+            <!-- 動態顯示資料庫中的圖片 -->
             <div v-if="currentQuestion.image" class="mb-6 flex justify-center">
               <img :src="currentQuestion.image" alt="題目圖片" class="max-h-64 rounded-2xl shadow-md border-2 border-pink-200 object-contain">
             </div>
@@ -124,7 +124,7 @@
           <div v-else-if="currentQuestion">
             <h3 class="text-base font-bold text-gray-800 mb-2 text-center">第 {{ currentQ }} 題：{{ currentQuestion.question }}</h3>
             
-            <!-- 手機端若有圖片也顯示縮圖 -->
+            <!-- 手機端動態顯示圖片縮圖 -->
             <div v-if="currentQuestion.image" class="mb-3 flex justify-center">
               <img :src="currentQuestion.image" alt="題目圖片" class="max-h-36 rounded-xl shadow border object-contain">
             </div>
@@ -146,7 +146,7 @@
             <div v-if="timer === 0" class="mt-3 p-3 rounded-xl bg-gray-50 border text-center font-bold">
               <span v-if="isCorrect" class="text-green-600 text-lg">🎉 答對了！獲得分數！</span>
               <span v-else class="text-red-500 text-lg">❌ 答錯了或未作答！</span>
-              <div class="text-sm text-gray-600 mt-1">正確答案是：{{ currentQuestion.answer.replace('Option', '') }}</div>
+              <div class="text-sm text-gray-600 mt-1">正確答案是：{{ currentQuestion.answer ? currentQuestion.answer.replace('Option', '') : '' }}</div>
             </div>
           </div>
         </div>
@@ -190,11 +190,13 @@
         const leaderboard = ref([]);
         let timerInterval = null;
 
-        // 從資料庫動態抓取全部題目（支援無限多題與圖片）
+        // 強制從資料庫 questions 表撈取所有題目與圖片
         const fetchQuestions = async () => {
-          let { data } = await db.from('questions').select('*').order('id', { ascending: true });
+          let { data, error } = await db.from('questions').select('*').order('id', { ascending: true });
           if (data && data.length > 0) {
             questions.value = data;
+          } else {
+            console.error('無法取得資料庫題目:', error);
           }
         };
 
@@ -255,7 +257,6 @@
             if (timer.value > 0) {
               timer.value--;
               if (timer.value === 0) {
-                // 當時間歸零時，前端自動核對答案並計算分數寫入資料庫（只計算一次）
                 await evaluateAnswer();
               }
             }
@@ -300,7 +301,6 @@
           await db.from('game_state').update({ current_q: nextQ, status: 'PLAYING', start_time: Date.now() }).eq('id', 1);
         };
 
-        // 玩家點擊選項（此時不馬上加分，僅記錄選擇）
         const submitAnswer = (idx) => {
           if (submitted.value || timer.value === 0) return;
           selectedOption.value = idx;
@@ -308,13 +308,12 @@
           myAnswer.value = idx;
         };
 
-        // 時間到或切換題目時統一結算得分
         const evaluateAnswer = async () => {
           if (myAnswer.value !== null && currentQuestion.value) {
             const mapOpt = ['OptionA', 'OptionB', 'OptionC', 'OptionD'];
             if (mapOpt[myAnswer.value] === currentQuestion.value.answer) {
               isCorrect.value = true;
-              let addScore = 10; // 答對基礎分
+              let addScore = 10; 
               myScore.value += addScore;
               await db.from('players').update({ score: myScore.value }).eq('id', playerId.value);
               fetchState();
