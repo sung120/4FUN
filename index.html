@@ -85,10 +85,13 @@
             <div class="text-center pt-2" v-if="currentQuestion">
               <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ currentQuestion.question }}</h2>
               
-              <!-- 圖片限制最大高度，讓題目往上移 -->
-              <div v-if="currentQuestion.image" class="mb-3 w-full flex justify-center items-center h-[540px]">
-                <img :src="currentQuestion.image" alt="題目圖片" class="max-w-full max-h-full h-auto w-auto rounded-2xl shadow-md border-2 border-pink-200 object-contain">
+              <!-- 圖片限制最高 540px、最大寬度 760px，強制鎖死外框防止正方形爆版 -->
+              <div v-if="currentQuestion.image" class="mb-3 w-full flex justify-center">
+                <div class="relative w-full max-w-[760px] h-[540px] flex justify-center items-center bg-pink-50/50 rounded-2xl border-2 border-pink-200 overflow-hidden shadow-md">
+                  <img :src="currentQuestion.image" alt="題目圖片" class="w-full h-full object-contain">
+                </div>
               </div>
+
               <div class="grid grid-cols-2 gap-3 max-w-3xl mx-auto">
                 <div v-for="(opt, idx) in [currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d]" :key="idx" 
                      :class="timer === 0 && ['OptionA', 'OptionB', 'OptionC', 'OptionD'][idx] === currentQuestion.answer ? 'bg-green-300 border-green-600 ring-4 ring-green-400' : 'bg-pink-50 border-pink-200'"
