@@ -82,25 +82,24 @@
               <button @click="nextQuestion" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-xl font-bold shadow">下一題 / 結算</button>
             </div>
             
-            <div class="text-center my-auto" v-if="currentQuestion">
-              <h2 class="text-2xl font-bold text-gray-800 mb-3">{{ currentQuestion.question }}</h2>
+            <div class="text-center pt-2" v-if="currentQuestion">
+              <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ currentQuestion.question }}</h2>
               
-              <!-- 圖片預載入快取渲染 (與下方按鈕同寬、等比例不變形) -->
-              <div v-if="currentQuestion.image" class="mb-4 w-full max-w-3xl mx-auto flex justify-center">
-                <img :src="currentQuestion.image" alt="題目圖片" class="w-full max-h-96 rounded-2xl shadow-md border-2 border-pink-200 object-contain">
+              <!-- 圖片限制最大高度，讓題目整體往上移 -->
+              <div v-if="currentQuestion.image" class="mb-3 w-full max-w-3xl mx-auto flex justify-center">
+                <img :src="currentQuestion.image" alt="題目圖片" class="w-full max-h-64 rounded-2xl shadow-md border-2 border-pink-200 object-contain">
               </div>
 
-              <div class="grid grid-cols-2 gap-4 max-w-3xl mx-auto">
+              <div class="grid grid-cols-2 gap-3 max-w-3xl mx-auto">
                 <div v-for="(opt, idx) in [currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d]" :key="idx" 
                      :class="timer === 0 && ['OptionA', 'OptionB', 'OptionC', 'OptionD'][idx] === currentQuestion.answer ? 'bg-green-300 border-green-600 ring-4 ring-green-400' : 'bg-pink-50 border-pink-200'"
-                     class="border-2 p-4 rounded-2xl text-lg font-semibold text-gray-700 shadow transition-all">
+                     class="border-2 p-3 rounded-2xl text-lg font-semibold text-gray-700 shadow transition-all">
                   {{ ['A', 'B', 'C', 'D'][idx] }}. {{ opt }}
                 </div>
               </div>
               
-              <div v-if="timer === 0" class="mt-4 text-xl font-bold text-green-600 animate-bounce">✨ 時間到！公佈正確答案 ✨</div>
+              <div v-if="timer === 0" class="mt-3 text-xl font-bold text-green-600 animate-bounce">✨ 時間到！公佈正確答案 ✨</div>
             </div>
-          </div>
 
           <!-- 右側：全體即時計分板 (佔 4 欄，固定高度與左側同高，內部獨立滾動) -->
           <div class="col-span-4 flex flex-col bg-pink-50 p-4 rounded-2xl border-2 border-pink-200 h-full">
