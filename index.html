@@ -10,6 +10,10 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-pink-50 text-gray-800">
+
+  <!-- 🎵 僅大螢幕端載入背景音樂 (手機端不載入) -->
+  <audio v-if="isScreenView" id="bgm" src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/One%20Piece%20Ending%201%20-%20Memories%20-%20SLS%20Piano%20Cover.mp3" preload="auto" loop></audio>
+
   <div id="app" class="min-h-screen flex flex-col justify-between p-4">
     
     <!-- 大螢幕端 (?view=screen) - 左右分割版面 -->
@@ -37,12 +41,11 @@
             <button @click="resetGame" class="bg-red-500 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">🔄 重置遊戲</button>
             <button @click="startGame" class="bg-green-600 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">▶ 開始遊戲</button>
           </div>
-          <!-- 無邊框、無陰影、與按鈕間隔一行的照片 -->
-          <div class="flex justify-center mt-6">
+          <!-- 大廳圖片與文字水平置中對齊 -->
+          <div class="flex justify-center items-center gap-6 mt-6">
             <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/D.png" alt="婚禮大廳照片" class="max-h-64 rounded-xl object-contain">
             <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/qrcode_funtony.vercel.app.png" alt="QR CODE" class="max-h-64 rounded-xl object-contain">
-            <p class="text-2xl text-gray-600 ">請掃描QR CODE加入遊戲</p>
-          
+            <p class="text-3xl font-bold text-gray-600">請掃描 QR CODE 加入遊戲</p>
           </div>
         </div>
 
@@ -72,9 +75,9 @@
             <div class="text-center my-auto" v-if="currentQuestion">
               <h2 class="text-2xl font-bold text-gray-800 mb-3">{{ currentQuestion.question }}</h2>
               
-              <!-- 圖片預載入快取渲染 -->
+              <!-- 圖片預載入快取渲染 (與下方按鈕同寬、等比例不變形) -->
               <div v-if="currentQuestion.image" class="mb-4 w-full max-w-3xl mx-auto flex justify-center">
-                <img :src="currentQuestion.image" alt="題目圖片" class="w-full max-h-120 rounded-2xl shadow-md border-2 border-pink-200 object-contain">
+                <img :src="currentQuestion.image" alt="題目圖片" class="w-full max-h-96 rounded-2xl shadow-md border-2 border-pink-200 object-contain">
               </div>
 
               <div class="grid grid-cols-2 gap-4 max-w-3xl mx-auto">
@@ -108,7 +111,7 @@
       </div>
     </template>
 
-<!-- 手機答題端 -->
+    <!-- 手機答題端 -->
     <template v-else>
       <div class="max-w-md mx-auto w-full flex-1 flex flex-col justify-center py-4">
         <!-- 登入畫面 (包含計分方式說明與圖片) -->
@@ -127,13 +130,11 @@
           <input v-model="inputName" type="text" placeholder="請輸入您的姓名或桌號" class="w-full border p-3 rounded-lg mb-4 text-center text-lg">
           <button @click="joinGame" class="w-full bg-pink-500 text-white py-3 rounded-lg font-bold text-lg shadow mb-4">進入遊戲</button>
 
-          <!-- 照片放這裡：只在登入時顯示在卡片內，大小適合手機閱讀 -->
+          <!-- 手機端登入卡片內的裝飾照片 -->
           <div class="flex justify-center mt-2">
             <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/D.png" alt="婚禮大廳照片" class="max-h-32 rounded-xl object-contain">
           </div>
         </div>
-
-        
 
         <!-- 手機端結算畫面 -->
         <div v-else-if="status === 'FINISHED'" class="bg-white p-6 rounded-2xl shadow-xl text-center py-10">
@@ -161,9 +162,10 @@
           <div v-else-if="currentQuestion">
             <h3 class="text-base font-bold text-gray-800 mb-2 text-center">第 {{ currentQ }} 題：{{ currentQuestion.question }}</h3>
             
-            <div v-if="currentQuestion.image" class="mb-3 flex justify-center">
+            <div v-if="currentQuestion.image" class="mb-3 w-full flex justify-center">
               <img :src="currentQuestion.image" alt="題目圖片" class="w-full max-h-56 rounded-xl shadow border object-contain">
             </div>
+
             <div class="flex flex-col gap-2">
               <button v-for="(opt, idx) in [currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d]" :key="idx" 
                       @click="submitAnswer(idx)"
@@ -225,7 +227,7 @@
         const myScore = ref(0);
         const leaderboard = ref([]);
         let timerInterval = null;
-        let answeredTimeLeft = 15; // 記錄玩家送出答案時剩餘的秒數
+        let answeredTimeLeft = 15;
 
         const preloadImages = (qList) => {
           qList.forEach(q => {
@@ -273,6 +275,19 @@
         onMounted(async () => {
           await fetchQuestions();
           await fetchState();
+
+          // 大螢幕背景音樂自動播放與解鎖邏輯
+          if (isScreenView.value) {
+            const playAudio = () => {
+              const audio = document.getElementById('bgm');
+              if (audio) {
+                audio.play().catch(() => {});
+              }
+              window.removeEventListener('click', playAudio);
+            };
+            setTimeout(() => { playAudio(); }, 1000);
+            window.addEventListener('click', playAudio);
+          }
 
           db.channel('public:game_state')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, payload => {
@@ -334,6 +349,10 @@
         };
 
         const startGame = async () => {
+          // 點擊開始遊戲時確保音樂播放
+          const audio = document.getElementById('bgm');
+          if (audio) { audio.play().catch(() => {}); }
+
           await db.from('game_state').update({ current_q: 1, status: 'PLAYING', start_time: Date.now() }).eq('id', 1);
         };
 
@@ -351,20 +370,15 @@
           selectedOption.value = idx;
           submitted.value = true;
           myAnswer.value = idx;
-          answeredTimeLeft = timer.value; // 記錄按下按鈕當下的剩餘秒數
+          answeredTimeLeft = timer.value;
         };
 
-        // Kahoot 速度加權計分邏輯
         const evaluateAnswer = async () => {
           if (myAnswer.value !== null && currentQuestion.value) {
             const mapOpt = ['OptionA', 'OptionB', 'OptionC', 'OptionD'];
             if (mapOpt[myAnswer.value] === currentQuestion.value.answer) {
               isCorrect.value = true;
-              
-              // 基礎分 500 分 + 剩餘秒數獎勵 (每剩 1 秒多拿 33 分，最高 500 分)
-              // 總分範圍：答對最快約 1000 分，壓線答對約 500 分
               let earnedScore = 500 + Math.floor((answeredTimeLeft / 15) * 500);
-              
               myScore.value += earnedScore;
               await db.from('players').update({ score: myScore.value }).eq('id', playerId.value);
               fetchState();
