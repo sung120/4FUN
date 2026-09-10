@@ -18,7 +18,7 @@
         <!-- 大廳等待畫面 -->
         <div v-if="status === 'LOBBY' || currentQ === 0" class="flex-1 flex flex-col items-center justify-center bg-white p-12 rounded-3xl shadow-2xl text-center my-auto">
           <h1 class="text-5xl font-extrabold text-pink-600 mb-6">TONY and YUWEN 的有獎徵答</h1>
-          <p class="text-2xl text-gray-600 mb-8">請掃描 QR Code 或輸入網址加入遊戲！</p>
+          <p class="text-2xl text-gray-600 mb-4">請掃描 QR Code 或輸入網址加入遊戲！</p>
           <p class="text-2xl text-gray-600 mb-8">也歡迎贊助禮物！</p>
           <div class="bg-pink-100 border-4 border-pink-300 px-8 py-6 rounded-2xl mb-10">
             <span class="text-3xl font-bold text-gray-700">資料庫即時題庫：</span>
@@ -33,15 +33,14 @@
             </span>
             <span v-if="playersList.length === 0" class="text-gray-400 text-lg">等待賓客加入中...</span>
           </div>
-          <div class="flex gap-6">
+          <div class="flex gap-6 mb-6">
             <button @click="resetGame" class="bg-red-500 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">🔄 重置遊戲</button>
             <button @click="startGame" class="bg-green-600 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">▶ 開始遊戲</button>
           </div>
-          <div class="flex justify-center">
-            
-            <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/D.png" alt="婚禮大廳照片"class="max-h-64 rounded-x3 object-contain">
+          <!-- 無邊框、無陰影、與按鈕間隔一行的照片 -->
+          <div class="flex justify-center mt-6">
+            <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/D.png" alt="婚禮大廳照片" class="max-h-64 rounded-xl object-contain">
           </div>
-          
         </div>
 
         <!-- 遊戲結束結算畫面 -->
@@ -109,10 +108,19 @@
     <!-- 手機答題端 -->
     <template v-else>
       <div class="max-w-md mx-auto w-full flex-1 flex flex-col justify-center py-4">
-        <!-- 登入畫面 -->
+        <!-- 登入畫面 (包含計分方式說明) -->
         <div v-if="!joined" class="bg-white p-6 rounded-2xl shadow-xl text-center">
           <h2 class="text-2xl font-bold text-pink-600 mb-2">TONY and YUWEN 的有獎徵答</h2>
-          <p class="text-gray-500 mb-4">輸入名字即可參與互動搶答！</p>
+          <p class="text-gray-500 mb-3">輸入名字即可參與互動搶答！</p>
+          
+          <!-- 計分方式說明提示框 -->
+          <div class="bg-pink-50 border border-pink-200 p-3 rounded-xl mb-4 text-left text-sm text-pink-700">
+            <p class="font-bold mb-1">💡 遊戲規則與計分方式：</p>
+            <p>• 每題 15 秒倒數搶答。</p>
+            <p>• 答對者獲得分數，<span class="font-extrabold text-red-500">速度越快分數越高</span>（最高 1000 分）！</p>
+            <p>• 答錯不倒扣分數。</p>
+          </div>
+
           <input v-model="inputName" type="text" placeholder="請輸入您的姓名或桌號" class="w-full border p-3 rounded-lg mb-4 text-center text-lg">
           <button @click="joinGame" class="w-full bg-pink-500 text-white py-3 rounded-lg font-bold text-lg shadow">進入遊戲</button>
         </div>
@@ -162,7 +170,7 @@
             
             <div v-if="submitted && timer > 0" class="mt-3 text-center text-green-600 font-bold">✓ 答案已送出，等待時間到揭曉！</div>
             <div v-if="timer === 0" class="mt-3 p-3 rounded-xl bg-gray-50 border text-center font-bold">
-              <span v-if="isCorrect" class="text-green-600 text-lg">🎉 答對了！獲得 10 分！</span>
+              <span v-if="isCorrect" class="text-green-600 text-lg">🎉 答對了！獲得本題積分！</span>
               <span v-else class="text-red-500 text-lg">❌ 答錯了或未作答！</span>
               <div class="text-sm text-gray-600 mt-1">正確答案是：{{ currentQuestion.answer ? currentQuestion.answer.replace('Option', '') : '' }}</div>
               <div class="text-sm font-extrabold text-pink-600 mt-2">目前總積分：{{ myScore }} 分</div>
@@ -208,6 +216,7 @@
         const myScore = ref(0);
         const leaderboard = ref([]);
         let timerInterval = null;
+        let answeredTimeLeft = 15; // 記錄玩家送出答案時剩餘的秒數
 
         const preloadImages = (qList) => {
           qList.forEach(q => {
@@ -236,7 +245,7 @@
           let { data: pData, count } = await db.from('players').select('*', { count: 'exact' }).order('score', { ascending: false });
           if (pData) {
             playersList.value = pData;
-            leaderboard.value = pData; // 包含所有玩家的即時計分榜
+            leaderboard.value = pData; 
             playerCount.value = count || pData.length;
           }
 
@@ -266,6 +275,7 @@
                 submitted.value = false;
                 myAnswer.value = null;
                 isCorrect.value = false;
+                answeredTimeLeft = 15;
                 startTimer();
               }
               fetchState();
@@ -332,15 +342,21 @@
           selectedOption.value = idx;
           submitted.value = true;
           myAnswer.value = idx;
+          answeredTimeLeft = timer.value; // 記錄按下按鈕當下的剩餘秒數
         };
 
+        // Kahoot 速度加權計分邏輯
         const evaluateAnswer = async () => {
           if (myAnswer.value !== null && currentQuestion.value) {
             const mapOpt = ['OptionA', 'OptionB', 'OptionC', 'OptionD'];
             if (mapOpt[myAnswer.value] === currentQuestion.value.answer) {
               isCorrect.value = true;
-              let addScore = 10; 
-              myScore.value += addScore;
+              
+              // 基礎分 500 分 + 剩餘秒數獎勵 (每剩 1 秒多拿 33 分，最高 500 分)
+              // 總分範圍：答對最快約 1000 分，壓線答對約 500 分
+              let earnedScore = 500 + Math.floor((answeredTimeLeft / 15) * 500);
+              
+              myScore.value += earnedScore;
               await db.from('players').update({ score: myScore.value }).eq('id', playerId.value);
               fetchState();
             } else {
