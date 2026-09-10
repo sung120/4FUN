@@ -41,7 +41,7 @@
           <div class="flex justify-center mt-6">
             <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/D.png" alt="婚禮大廳照片" class="max-h-64 rounded-xl object-contain">
             <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/qrcode_funtony.vercel.app.png" alt="QR CODE" class="max-h-64 rounded-xl object-contain">
-            <p class="text-2xl text-gray-600 mb-8">請掃描QR CODE加入遊戲</p>
+            <p class="text-2xl text-gray-600 ">請掃描QR CODE加入遊戲</p>
           
           </div>
         </div>
@@ -126,7 +126,16 @@
 
           <input v-model="inputName" type="text" placeholder="請輸入您的姓名或桌號" class="w-full border p-3 rounded-lg mb-4 text-center text-lg">
           <button @click="joinGame" class="w-full bg-pink-500 text-white py-3 rounded-lg font-bold text-lg shadow">進入遊戲</button>
+
+
+          
         </div>
+        <div class="flex justify-center mt-6">
+          <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/D.png" alt="婚禮大廳照片" class="max-h-64 rounded-xl object-contain">
+
+        </div>
+
+        
 
         <!-- 手機端結算畫面 -->
         <div v-else-if="status === 'FINISHED'" class="bg-white p-6 rounded-2xl shadow-xl text-center py-10">
