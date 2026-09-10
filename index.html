@@ -85,10 +85,10 @@
             <div class="text-center pt-2" v-if="currentQuestion">
               <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ currentQuestion.question }}</h2>
               
-<!-- 圖片限制最高 540px、最大寬度 760px，使用自適應容器防止正方形爆版 -->
+<!-- 嚴格固定外框為 760x540，圖片等比例置中縮放 -->
               <div v-if="currentQuestion.image" class="mb-3 w-full flex justify-center">
-                <div class="max-w-[760px] max-h-[540px] flex justify-center items-center bg-pink-50/50 rounded-2xl border-2 border-pink-200 overflow-hidden shadow-md p-2">
-                  <img :src="currentQuestion.image" alt="題目圖片" class="max-w-full max-h-[524px] w-auto h-auto object-contain rounded-xl">
+                <div class="w-[760px] h-[540px] flex-shrink-0 flex justify-center items-center bg-pink-50/50 rounded-2xl border-2 border-pink-200 overflow-hidden shadow-md">
+                  <img :src="currentQuestion.image" alt="題目圖片" class="w-full h-full object-contain">
                 </div>
               </div>
 
