@@ -11,7 +11,7 @@
 </head>
 <body class="bg-pink-50 text-gray-800">
 
-  <!-- 🎵 僅大螢幕端載入背景音樂 (HTML Audio 保持隱藏，透過介面按鈕控制) -->
+  <!-- 🎵 僅大螢幕端載入背景音樂 -->
   <audio v-if="isScreenView" id="bgm" src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/One%20Piece%20Ending%201%20-%20Memories%20-%20SLS%20Piano%20Cover.mp3" preload="auto" loop></audio>
 
   <div id="app" class="min-h-screen flex flex-col justify-between p-4">
@@ -53,7 +53,7 @@
           <div class="mt-6 flex justify-center">
             <button @click="toggleMusic" class="bg-pink-100 hover:bg-pink-200 border-2 border-pink-300 text-pink-700 px-6 py-3 rounded-full text-lg font-bold shadow flex items-center gap-2 transition">
               <span class="text-2xl animate-pulse">🎵</span>
-              <span>{{ isPlaying ? '暫停背景音樂' : '播放背景音樂' }}</span>
+              <span>{{ isPlaying ? '暫停背景音樂' : '播放背景音樂 (點擊解鎖)' }}</span>
             </button>
           </div>
         </div>
@@ -99,8 +99,7 @@
 
               <div class="grid grid-cols-2 gap-4 max-w-3xl mx-auto">
                 <div v-for="(opt, idx) in [currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d]" :key="idx" 
-                     :class="timer === 0 && ['OptionA', 'OptionB', 'OptionC', 'OptionD'][idx] === currentQuestion.answer ? 'bg-green-300 border-green-600 ring-4 ring-green-400' : 'bg-pink-50 border-pink-200'"
-                     class="border-2 p-4 rounded-2xl text-lg font-semibold text-gray-700 shadow transition-all">
+                     class="border-2 p-4 rounded-2xl text-lg font-semibold text-gray-700 shadow transition-all bg-pink-50 border-pink-200">
                   {{ ['A', 'B', 'C', 'D'][idx] }}. {{ opt }}
                 </div>
               </div>
@@ -319,7 +318,10 @@
               }
               window.removeEventListener('click', tryPlay);
             };
-            setTimeout(() => { tryPlay(); }, 500);
+
+            // 網頁載入後立即嘗試自動播一次
+            setTimeout(() => { tryPlay(); }, 300);
+            // 監聽畫面上任何點擊，只要點擊就立刻解鎖音樂播放
             window.addEventListener('click', tryPlay);
           }
 
