@@ -11,8 +11,11 @@
 </head>
 <body class="bg-pink-50 text-gray-800">
 
-  <!-- 🎵 僅大螢幕端載入背景音樂 (手機端不載入) -->
-  <audio v-if="isScreenView" id="bgm" src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/One%20Piece%20Ending%201%20-%20Memories%20-%20SLS%20Piano%20Cover.mp3" preload="auto" loop></audio>
+  <!-- 🎵 僅大螢幕端載入背景音樂 (右上角懸浮控制條，確保切換畫面不中斷、可手動點擊或調整音量) -->
+  <div v-if="isScreenView" class="fixed top-4 right-4 z-50 bg-white/90 backdrop-blur p-2 rounded-2xl shadow-lg flex items-center gap-2 border border-pink-200">
+    <span class="text-xs font-extrabold text-pink-600 px-1">🎵 背景音樂</span>
+    <audio id="bgm" src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/One%20Piece%20Ending%201%20-%20Memories%20-%20SLS%20Piano%20Cover.mp3" preload="auto" loop controls class="h-8 w-48"></audio>
+  </div>
 
   <div id="app" class="min-h-screen flex flex-col justify-between p-4">
     
@@ -276,7 +279,7 @@
           await fetchQuestions();
           await fetchState();
 
-          // 大螢幕背景音樂自動播放與解鎖邏輯
+          // 大螢幕背景音樂自動嘗試播放與解鎖邏輯
           if (isScreenView.value) {
             const playAudio = () => {
               const audio = document.getElementById('bgm');
