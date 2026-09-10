@@ -14,6 +14,15 @@
   <!-- 🎵 僅大螢幕端載入背景音樂 -->
   <audio v-if="isScreenView" id="bgm" src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/One%20Piece%20Ending%201%20-%20Memories%20-%20SLS%20Piano%20Cover.mp3" preload="auto" loop></audio>
 
+  <!-- 🌟 大螢幕專用：保證通過瀏覽器限制的「首次點擊解鎖音訊與進入畫面」遮罩 -->
+  <div v-if="isScreenView && !screenStarted" class="fixed inset-0 z-50 bg-pink-900/85 backdrop-blur-md flex flex-col items-center justify-center text-white text-center p-6">
+    <h1 class="text-5xl font-extrabold mb-4">🎵 TONY & YUWEN 婚禮互動問答</h1>
+    <p class="text-2xl mb-8 text-pink-200">大螢幕準備就緒，請點擊下方按鈕啟動音樂與大廳畫面！</p>
+    <button @click="startScreen" class="bg-pink-500 hover:bg-pink-600 text-white text-3xl font-extrabold px-12 py-6 rounded-3xl shadow-2xl transition transform hover:scale-105">
+      ✨ 點擊進入大螢幕畫面 ✨
+    </button>
+  </div>
+
   <div id="app" class="min-h-screen flex flex-col justify-between p-4">
     
     <!-- 大螢幕端 (?view=screen) - 左右分割版面 -->
@@ -41,7 +50,7 @@
             <button @click="startGame" class="bg-green-600 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">▶ 開始遊戲</button>
             <button @click="toggleMusic" class="bg-pink-100 hover:bg-pink-200 border-2 border-pink-300 text-pink-700 px-6 py-3 rounded-full text-lg font-bold shadow flex items-center gap-2 transition">
               <span class="text-2xl animate-pulse">🎵</span>
-              <span>{{ isPlaying ? '暫停背景音樂' : '播放背景音樂 (點擊解鎖)' }}</span>
+              <span>{{ isPlaying ? '暫停背景音樂' : '播放背景音樂' }}</span>
             </button>
           </div>
           
@@ -50,11 +59,6 @@
             <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/D.png" alt="婚禮大廳照片" class="max-h-64 rounded-xl object-contain">
             <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/qrcode_funtony.vercel.app.png" alt="QR CODE" class="max-h-64 rounded-xl object-contain">
             <p class="text-3xl font-bold text-gray-600">請掃描 QR CODE 加入遊戲</p>
-          </div>
-
-          <!-- 🎵 音樂按鈕放置於 QR CODE 下方 (僅大螢幕) -->
-          <div class="mt-6 flex justify-center">
-
           </div>
         </div>
 
@@ -74,7 +78,7 @@
         <div v-else class="flex-1 grid grid-cols-12 gap-6 bg-white p-6 rounded-3xl shadow-2xl my-auto items-stretch">
           
           <!-- 左側：題目與選項 (佔 8 欄) -->
-          <div class="col-span-8 flex flex-col justify-between pr-4 border-r border-pink-100">
+          <div class="col-span-8 flex flex-col justify-between pr-4 border-r border-pink-150">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
               <!-- 🎵 題目畫面：音樂按鈕放在題數文字的左邊 (僅大螢幕) -->
               <div class="flex items-center gap-3">
@@ -108,12 +112,12 @@
             </div>
           </div>
 
-          <!-- 右側：全體即時計分板 (佔 4 欄，帶滾輪) -->
-          <div class="col-span-4 flex flex-col bg-pink-50 p-4 rounded-2xl border-2 border-pink-200">
-            <h3 class="font-extrabold text-pink-600 text-xl mb-3 text-center border-b border-pink-200 pb-2">🏆 即時英雄榜 (共 {{ leaderboard.length }} 人)</h3>
-            <div class="flex-1 overflow-y-auto max-h-[500px] flex flex-col gap-2 pr-1">
+          <!-- 右側：全體即時計分板 (佔 4 欄，固定高度與左側同高，內部獨立滾動) -->
+          <div class="col-span-4 flex flex-col bg-pink-50 p-4 rounded-2xl border-2 border-pink-200 h-full">
+            <h3 class="font-extrabold text-pink-600 text-xl mb-3 text-center border-b border-pink-200 pb-2 flex-shrink-0">🏆 即時英雄榜 (共 {{ leaderboard.length }} 人)</h3>
+            <div class="flex-1 overflow-y-auto min-h-0 flex flex-col gap-2 pr-1">
               <div v-for="(p, index) in leaderboard" :key="p.id" 
-                   class="flex justify-between items-center bg-white p-3 rounded-xl border border-pink-200 shadow-sm text-base font-bold">
+                   class="flex justify-between items-center bg-white p-3 rounded-xl border border-pink-200 shadow-sm text-base font-bold flex-shrink-0">
                 <span class="truncate max-w-[150px]">
                   <span class="text-pink-500 mr-2">#{{ index + 1 }}</span>{{ p.name }}
                 </span>
@@ -247,6 +251,17 @@
 
         // 音樂播放狀態控制（僅大螢幕）
         const isPlaying = ref(false);
+        const screenStarted = ref(false);
+
+        const startScreen = () => {
+          screenStarted.value = true;
+          const audio = document.getElementById('bgm');
+          if (audio) {
+            audio.play().then(() => {
+              isPlaying.value = true;
+            }).catch(() => {});
+          }
+        };
 
         const toggleMusic = () => {
           if (!isScreenView.value) return;
@@ -306,24 +321,6 @@
         onMounted(async () => {
           await fetchQuestions();
           await fetchState();
-
-          // 大螢幕背景音樂自動嘗試播放與解鎖邏輯
-          if (isScreenView.value) {
-            const tryPlay = () => {
-              const audio = document.getElementById('bgm');
-              if (audio) {
-                audio.play().then(() => {
-                  isPlaying.value = true;
-                }).catch(() => {});
-              }
-              window.removeEventListener('click', tryPlay);
-            };
-
-            // 網頁載入後立即嘗試自動播一次
-            setTimeout(() => { tryPlay(); }, 300);
-            // 監聽畫面上任何點擊，只要點擊就立刻解鎖音樂播放
-            window.addEventListener('click', tryPlay);
-          }
 
           db.channel('public:game_state')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'game_state' }, payload => {
@@ -439,7 +436,7 @@
         return {
           isScreenView, status, currentQ, playerCount, playersList, inputName, nickname, joined,
           questions, currentQuestion, selectedOption, submitted, isCorrect, timer, myScore, leaderboard,
-          isPlaying, toggleMusic,
+          isPlaying, screenStarted, toggleMusic, startScreen,
           joinGame, forceRejoin, startGame, nextQuestion, submitAnswer, resetGame
         };
       }
