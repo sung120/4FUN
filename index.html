@@ -40,6 +40,10 @@
           <div class="flex gap-6 mb-6">
             <button @click="resetGame" class="bg-red-500 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">🔄 重置遊戲</button>
             <button @click="startGame" class="bg-green-600 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">▶ 開始遊戲</button>
+            <button @click="toggleMusic" class="bg-pink-100 hover:bg-pink-200 border-2 border-pink-300 text-pink-700 px-6 py-3 rounded-full text-lg font-bold shadow flex items-center gap-2 transition">
+              <span class="text-2xl animate-pulse">🎵</span>
+              <span>{{ isPlaying ? '暫停背景音樂' : '播放背景音樂 (點擊解鎖)' }}</span>
+            </button>
           </div>
           <!-- 大廳圖片與文字水平置中對齊 -->
           <div class="flex justify-center items-center gap-6 mt-6">
@@ -67,7 +71,13 @@
           <!-- 左側：題目與選項 (佔 8 欄) -->
           <div class="col-span-8 flex flex-col justify-between pr-4 border-r border-pink-100">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
-              <span class="text-2xl font-extrabold text-pink-600">第 {{ currentQ }} 題 / 共 {{ questions.length }} 題</span>
+              <div class="flex items-center gap-3">
+                <button @click="toggleMusic" class="bg-pink-100 hover:bg-pink-200 border border-pink-300 text-pink-700 px-3 py-1.5 rounded-full text-sm font-bold shadow flex items-center gap-1 transition">
+                  <span>🎵</span>
+                  <span>{{ isPlaying ? '暫停' : '播放' }}</span>
+                </button>
+                <span class="text-2xl font-extrabold text-pink-600">第 {{ currentQ }} 題 / 共 {{ questions.length }} 題</span>
+              </div>
               <span class="text-2xl font-bold">倒數：<span :class="timer === 0 ? 'text-gray-400' : 'text-red-500'">{{ timer }}</span> 秒</span>
               <button @click="nextQuestion" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-xl font-bold shadow">下一題 / 結算</button>
             </div>
@@ -414,6 +424,7 @@
         return {
           isScreenView, status, currentQ, playerCount, playersList, inputName, nickname, joined,
           questions, currentQuestion, selectedOption, submitted, isCorrect, timer, myScore, leaderboard,
+          isPlaying, toggleMusic,
           joinGame, forceRejoin, startGame, nextQuestion, submitAnswer, resetGame
         };
       }
