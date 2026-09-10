@@ -40,6 +40,10 @@
           <div class="flex gap-6 mb-6">
             <button @click="resetGame" class="bg-red-500 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">🔄 重置遊戲</button>
             <button @click="startGame" class="bg-green-600 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">▶ 開始遊戲</button>
+            <button @click="toggleMusic" class="bg-pink-100 hover:bg-pink-200 border-2 border-pink-300 text-pink-700 px-6 py-3 rounded-full text-lg font-bold shadow flex items-center gap-2 transition">
+              <span class="text-2xl animate-pulse">🎵</span>
+              <span>{{ isPlaying ? '暫停背景音樂' : '播放背景音樂 (點擊解鎖)' }}</span>
+            </button>
           </div>
           
           <!-- 大廳圖片與文字水平置中對齊 -->
@@ -51,10 +55,7 @@
 
           <!-- 🎵 音樂按鈕放置於 QR CODE 下方 (僅大螢幕) -->
           <div class="mt-6 flex justify-center">
-            <button @click="toggleMusic" class="bg-pink-100 hover:bg-pink-200 border-2 border-pink-300 text-pink-700 px-6 py-3 rounded-full text-lg font-bold shadow flex items-center gap-2 transition">
-              <span class="text-2xl animate-pulse">🎵</span>
-              <span>{{ isPlaying ? '暫停背景音樂' : '播放背景音樂 (點擊解鎖)' }}</span>
-            </button>
+
           </div>
         </div>
 
