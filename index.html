@@ -92,7 +92,7 @@
             </div>
           </div>
 
-          <!-- 右側：全體即時計分板 (佔 4 欄，高度與左側同高且內部獨立滾動) -->
+          <!-- 右側：全體即時計分板 (佔 4 欄，固定高度與左側同高，內部獨立滾動) -->
           <div class="col-span-4 flex flex-col bg-pink-50 p-4 rounded-2xl border-2 border-pink-200 h-full">
             <h3 class="font-extrabold text-pink-600 text-xl mb-3 text-center border-b border-pink-200 pb-2 flex-shrink-0">🏆 即時英雄榜 (共 {{ leaderboard.length }} 人)</h3>
             <div class="flex-1 overflow-y-auto min-h-0 flex flex-col gap-2 pr-1">
@@ -228,6 +228,21 @@
         const leaderboard = ref([]);
         let timerInterval = null;
         let answeredTimeLeft = 15;
+
+        // 音樂播放狀態控制（僅大螢幕）
+        const isPlaying = ref(false);
+
+        const toggleMusic = () => {
+          if (!isScreenView.value) return;
+          const audio = document.getElementById('bgm');
+          if (!audio) return;
+          if (audio.paused) {
+            audio.play().then(() => { isPlaying.value = true; }).catch(() => {});
+          } else {
+            audio.pause();
+            isPlaying.value = false;
+          }
+        };
 
         const preloadImages = (qList) => {
           qList.forEach(q => {
