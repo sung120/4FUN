@@ -66,8 +66,8 @@
         </div>
 
         <!-- 遊戲進行中畫面：左右分割 (左側題目、右側全體即時計分板) -->
-        <div v-else class="flex-1 grid grid-cols-12 gap-6 bg-white p-6 rounded-3xl shadow-2xl my-auto items-stretch">
-          
+<!-- 遊戲進行中畫面：左右分割 (將 my-auto 改成 items-start，確保卡片永遠貼齊上方，不被右側英雄榜高度影響) -->
+         <div v-else class="flex-1 grid grid-cols-12 gap-6 bg-white p-6 rounded-3xl shadow-2xl items-start">   
           <!-- 左側：題目與選項 (佔 8 欄) -->
           <div class="col-span-8 flex flex-col justify-between pr-4 border-r border-pink-100">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
