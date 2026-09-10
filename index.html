@@ -11,11 +11,8 @@
 </head>
 <body class="bg-pink-50 text-gray-800">
 
-  <!-- 🎵 僅大螢幕端載入背景音樂 (右上角懸浮控制條，確保切換畫面不中斷、可手動點擊或調整音量) -->
-  <div v-if="isScreenView" class="fixed top-4 right-4 z-50 bg-white/90 backdrop-blur p-2 rounded-2xl shadow-lg flex items-center gap-2 border border-pink-200">
-    <span class="text-xs font-extrabold text-pink-600 px-1">🎵 背景音樂</span>
-    <audio id="bgm" src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/One%20Piece%20Ending%201%20-%20Memories%20-%20SLS%20Piano%20Cover.mp3" preload="auto" loop controls class="h-8 w-48"></audio>
-  </div>
+  <!-- 🎵 僅大螢幕端載入背景音樂 (HTML Audio 保持隱藏，透過介面按鈕控制) -->
+  <audio v-if="isScreenView" id="bgm" src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/One%20Piece%20Ending%201%20-%20Memories%20-%20SLS%20Piano%20Cover.mp3" preload="auto" loop></audio>
 
   <div id="app" class="min-h-screen flex flex-col justify-between p-4">
     
@@ -44,11 +41,20 @@
             <button @click="resetGame" class="bg-red-500 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">🔄 重置遊戲</button>
             <button @click="startGame" class="bg-green-600 text-white font-bold text-xl px-8 py-4 rounded-2xl shadow-lg">▶ 開始遊戲</button>
           </div>
+          
           <!-- 大廳圖片與文字水平置中對齊 -->
           <div class="flex justify-center items-center gap-6 mt-6">
             <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/D.png" alt="婚禮大廳照片" class="max-h-64 rounded-xl object-contain">
             <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/qrcode_funtony.vercel.app.png" alt="QR CODE" class="max-h-64 rounded-xl object-contain">
             <p class="text-3xl font-bold text-gray-600">請掃描 QR CODE 加入遊戲</p>
+          </div>
+
+          <!-- 🎵 音樂按鈕放置於 QR CODE 下方 (僅大螢幕) -->
+          <div class="mt-6 flex justify-center">
+            <button @click="toggleMusic" class="bg-pink-100 hover:bg-pink-200 border-2 border-pink-300 text-pink-700 px-6 py-3 rounded-full text-lg font-bold shadow flex items-center gap-2 transition">
+              <span class="text-2xl animate-pulse">🎵</span>
+              <span>{{ isPlaying ? '暫停背景音樂' : '播放背景音樂' }}</span>
+            </button>
           </div>
         </div>
 
@@ -70,7 +76,15 @@
           <!-- 左側：題目與選項 (佔 8 欄) -->
           <div class="col-span-8 flex flex-col justify-between pr-4 border-r border-pink-100">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
-              <span class="text-2xl font-extrabold text-pink-600">第 {{ currentQ }} 題 / 共 {{ questions.length }} 題</span>
+              <!-- 🎵 題目畫面：音樂按鈕放在題數文字的左邊 (僅大螢幕) -->
+              <div class="flex items-center gap-3">
+                <button @click="toggleMusic" class="bg-pink-100 hover:bg-pink-200 border border-pink-300 text-pink-700 px-3 py-1.5 rounded-full text-sm font-bold shadow flex items-center gap-1 transition">
+                  <span>🎵</span>
+                  <span>{{ isPlaying ? '暫停' : '播放' }}</span>
+                </button>
+                <span class="text-2xl font-extrabold text-pink-600">第 {{ currentQ }} 題 / 共 {{ questions.length }} 題</span>
+              </div>
+
               <span class="text-2xl font-bold">倒數：<span :class="timer === 0 ? 'text-gray-400' : 'text-red-500'">{{ timer }}</span> 秒</span>
               <button @click="nextQuestion" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-xl font-bold shadow">下一題 / 結算</button>
             </div>
@@ -114,7 +128,7 @@
       </div>
     </template>
 
-    <!-- 手機答題端 -->
+    <!-- 手機答題端 (保證完全乾淨，無任何音樂相關元素) -->
     <template v-else>
       <div class="max-w-md mx-auto w-full flex-1 flex flex-col justify-center py-4">
         <!-- 登入畫面 (包含計分方式說明與圖片) -->
@@ -232,6 +246,21 @@
         let timerInterval = null;
         let answeredTimeLeft = 15;
 
+        // 音樂播放狀態控制（僅大螢幕）
+        const isPlaying = ref(false);
+
+        const toggleMusic = () => {
+          if (!isScreenView.value) return;
+          const audio = document.getElementById('bgm');
+          if (!audio) return;
+          if (audio.paused) {
+            audio.play().then(() => { isPlaying.value = true; }).catch(() => {});
+          } else {
+            audio.pause();
+            isPlaying.value = false;
+          }
+        };
+
         const preloadImages = (qList) => {
           qList.forEach(q => {
             if (q.image && q.image.trim() !== '') {
@@ -281,15 +310,17 @@
 
           // 大螢幕背景音樂自動嘗試播放與解鎖邏輯
           if (isScreenView.value) {
-            const playAudio = () => {
+            const tryPlay = () => {
               const audio = document.getElementById('bgm');
               if (audio) {
-                audio.play().catch(() => {});
+                audio.play().then(() => {
+                  isPlaying.value = true;
+                }).catch(() => {});
               }
-              window.removeEventListener('click', playAudio);
+              window.removeEventListener('click', tryPlay);
             };
-            setTimeout(() => { playAudio(); }, 1000);
-            window.addEventListener('click', playAudio);
+            setTimeout(() => { tryPlay(); }, 500);
+            window.addEventListener('click', tryPlay);
           }
 
           db.channel('public:game_state')
@@ -352,9 +383,12 @@
         };
 
         const startGame = async () => {
-          // 點擊開始遊戲時確保音樂播放
-          const audio = document.getElementById('bgm');
-          if (audio) { audio.play().catch(() => {}); }
+          if (isScreenView.value) {
+            const audio = document.getElementById('bgm');
+            if (audio) { 
+              audio.play().then(() => { isPlaying.value = true; }).catch(() => {}); 
+            }
+          }
 
           await db.from('game_state').update({ current_q: 1, status: 'PLAYING', start_time: Date.now() }).eq('id', 1);
         };
@@ -403,6 +437,7 @@
         return {
           isScreenView, status, currentQ, playerCount, playersList, inputName, nickname, joined,
           questions, currentQuestion, selectedOption, submitted, isCorrect, timer, myScore, leaderboard,
+          isPlaying, toggleMusic,
           joinGame, forceRejoin, startGame, nextQuestion, submitAnswer, resetGame
         };
       }
