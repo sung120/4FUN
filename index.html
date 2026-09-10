@@ -74,7 +74,7 @@
               
               <!-- 圖片預載入快取渲染 -->
               <div v-if="currentQuestion.image" class="mb-4 flex justify-center">
-                <img :src="currentQuestion.image" alt="題目圖片" class="max-h-96 rounded-2xl shadow-md border-2 border-pink-200 object-contain">
+                <img :src="currentQuestion.image" alt="題目圖片" class="w-full max-h-80 rounded-2xl shadow-md border-2 border-pink-200 object-contain">
               </div>
 
               <div class="grid grid-cols-2 gap-4 max-w-3xl mx-auto">
@@ -162,9 +162,8 @@
             <h3 class="text-base font-bold text-gray-800 mb-2 text-center">第 {{ currentQ }} 題：{{ currentQuestion.question }}</h3>
             
             <div v-if="currentQuestion.image" class="mb-3 flex justify-center">
-              <img :src="currentQuestion.image" alt="題目圖片" class="max-h-36 rounded-xl shadow border object-contain">
+              <img :src="currentQuestion.image" alt="題目圖片" class="w-full max-h-56 rounded-xl shadow border object-contain">
             </div>
-
             <div class="flex flex-col gap-2">
               <button v-for="(opt, idx) in [currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d]" :key="idx" 
                       @click="submitAnswer(idx)"
