@@ -31,7 +31,7 @@
             <span class="text-5xl font-extrabold text-pink-600 ml-3">{{ playersList.length }} 人</span>
           </div>
 
-          <!-- 放大後的 QR Code 與大廳照片（已移除邊框與陰影） -->
+          <!-- 放大後的 QR Code 與大廳照片（無邊框） -->
           <div class="flex justify-center items-center gap-8 mb-8">
             <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/D.png" alt="婚禮大廳照片" class="max-h-80 rounded-2xl object-contain">
             <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/qrcode_funtony.vercel.app.png" alt="QR CODE" class="max-h-80 rounded-2xl object-contain">
@@ -40,10 +40,10 @@
 
           <!-- 完整玩家名單預覽 (帶滾輪) -->
           <div class="flex flex-wrap justify-center gap-3 max-w-4xl mb-8 max-h-48 overflow-y-auto bg-pink-50 p-4 rounded-2xl border border-pink-200">
-            <span v-for="p in playersList" :key="p.id" class="bg-white border border-pink-300 px-4 py-2 rounded-full text-base font-bold text-pink-600 shadow-sm">
+            <span v-for="p in playersList" :key="p.id" class="bg-white border border-pink-300 px-4 py-2 rounded-full text-lg font-bold text-pink-600 shadow-sm">
               {{ p.name }}
             </span>
-            <span v-if="playersList.length === 0" class="text-gray-400 text-lg">等待賓客加入中...</span>
+            <span v-if="playersList.length === 0" class="text-gray-400 text-xl">等待賓客加入中...</span>
           </div>
 
           <div class="flex gap-6 mb-6">
@@ -62,7 +62,7 @@
         <div v-else-if="status === 'FINISHED'" class="flex-1 flex flex-col items-center justify-center bg-white p-12 rounded-3xl shadow-2xl text-center my-auto">
           <h1 class="text-5xl font-extrabold text-pink-600 mb-6">🏆 最終完整英雄榜</h1>
           <div class="w-full max-w-2xl bg-pink-50 p-6 rounded-2xl mb-8 border-2 border-pink-200 max-h-96 overflow-y-auto">
-            <div v-for="(p, index) in leaderboard" :key="p.id" class="flex justify-between items-center py-3 border-b border-pink-200 text-xl font-bold">
+            <div v-for="(p, index) in leaderboard" :key="p.id" class="flex justify-between items-center py-3 border-b border-pink-200 text-2xl font-bold">
               <span>第 {{ index + 1 }} 名：{{ p.name }}</span>
               <span class="text-pink-600">{{ p.score }} 分</span>
             </div>
@@ -88,35 +88,39 @@
             </div>
             
             <div class="text-center pt-2" v-if="currentQuestion">
-              <h2 class="text-4xl font-bold text-gray-800 mb-2">{{ currentQuestion.question }}</h2>
-              <div v-if="currentQuestion.image" class="mb-3 w-full max-w-3xl mx-auto flex justify-center">
-                <img :src="currentQuestion.image" alt="題目圖片" class="w-full max-h-96 rounded-2xl shadow-md border-2 border-pink-200 object-contain">
+              <h2 class="text-6xl font-extrabold text-gray-900 mb-4 leading-tight">{{ currentQuestion.question }}</h2>
+              
+              <div v-if="currentQuestion.image" class="mb-4 w-full max-w-3xl mx-auto flex justify-center">
+                <img :src="currentQuestion.image" alt="題目圖片" class="w-full max-h-80 rounded-2xl shadow-md border-2 border-pink-200 object-contain">
               </div>
 
-              <div class="grid grid-cols-2 gap-3 max-w-3xl mx-auto">
+              <!-- 選項放大到 text-6xl -->
+              <div class="grid grid-cols-2 gap-4 max-w-4xl mx-auto">
                 <div v-for="(opt, idx) in [currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d]" :key="idx" 
                      :class="timer === 0 && ['OptionA', 'OptionB', 'OptionC', 'OptionD'][idx] === currentQuestion.answer ? 'bg-green-300 border-green-600 ring-4 ring-green-400' : 'bg-pink-50 border-pink-200'"
-                     class="border-2 p-3 rounded-2xl text-lg font-semibold text-gray-700 shadow transition-all">
+                     class="border-4 p-6 rounded-3xl text-6xl font-extrabold text-gray-800 shadow-md transition-all flex items-center justify-center">
                   {{ ['A', 'B', 'C', 'D'][idx] }}. {{ opt }}
                 </div>
               </div>
               
-              <div v-if="timer === 0" class="mt-3 text-xl font-bold text-green-600 animate-bounce">✨ 時間到！公佈正確答案 ✨</div>
+              <div v-if="timer === 0" class="mt-4 text-3xl font-extrabold text-green-600 animate-bounce">✨ 時間到！公佈正確答案 ✨</div>
             </div>
           </div>
 
           <!-- 右側：全體即時計分板 (佔 4 欄，固定高度並保持內部獨立滾動) -->
           <div class="col-span-4 flex flex-col bg-pink-50 p-4 rounded-2xl border-2 border-pink-200 h-[650px]">
-            <h3 class="font-extrabold text-pink-600 text-xl mb-3 text-center border-b border-pink-200 pb-2 flex-shrink-0">🏆 即時英雄榜 (共 {{ leaderboard.length }} 人)</h3>
+            <!-- 英雄榜標題放大 -->
+            <h3 class="font-extrabold text-pink-600 text-3xl mb-3 text-center border-b border-pink-200 pb-2 flex-shrink-0">🏆 即時英雄榜 (共 {{ leaderboard.length }} 人)</h3>
             <div class="flex-1 overflow-y-auto min-h-0 flex flex-col gap-2 pr-1">
+              <!-- 英雄榜名單放大 -->
               <div v-for="(p, index) in leaderboard" :key="p.id" 
-                   class="flex justify-between items-center bg-white p-3 rounded-xl border border-pink-200 shadow-sm text-base font-bold flex-shrink-0">
-                <span class="truncate max-w-[150px]">
+                   class="flex justify-between items-center bg-white p-3 rounded-xl border border-pink-200 shadow-sm text-2xl font-bold flex-shrink-0">
+                <span class="truncate max-w-[200px]">
                   <span class="text-pink-500 mr-2">#{{ index + 1 }}</span>{{ p.name }}
                 </span>
                 <span class="text-pink-600 font-extrabold">{{ p.score }} 分</span>
               </div>
-              <div v-if="leaderboard.length === 0" class="text-center text-gray-400 my-auto">尚無計分資料</div>
+              <div v-if="leaderboard.length === 0" class="text-center text-gray-400 my-auto text-xl">尚無計分資料</div>
             </div>
           </div>
 
@@ -176,7 +180,7 @@
             <h3 class="text-base font-bold text-gray-800 mb-2 text-center">第 {{ currentQ }} 題：{{ currentQuestion.question }}</h3>
             
             <div v-if="currentQuestion.image" class="mb-3 w-full flex justify-center">
-              <img :src="currentQuestion.image" alt="題目圖片" class="w-full max-h-56 rounded-xl shadow border object-contain">
+              <img :src="currentQuestion.image" alt="題目圖片" class="w-full max-h-80 rounded-xl shadow border object-contain">
             </div>
 
             <div class="flex flex-col gap-2">
