@@ -21,15 +21,22 @@
       <div class="max-w-7xl mx-auto w-full flex-1 flex flex-col justify-between py-2">
         <!-- 大廳等待畫面 -->
         <div v-if="status === 'LOBBY' || currentQ === 0" class="flex-1 flex flex-col items-center justify-center bg-white p-12 rounded-3xl shadow-2xl text-center my-auto">
-          <h1 class="text-5xl font-extrabold text-pink-600 mb-6">TONY and YUWEN 的有獎徵答</h1>
-          <p class="text-2xl text-gray-600 mb-4">請掃描 QR Code 或輸入網址加入遊戲！</p>
-          <p class="text-2xl text-gray-600 mb-8">也歡迎贊助禮物！</p>
+          <h1 class="text-6xl font-extrabold text-pink-600 mb-6">TONY and YUWEN 的有獎徵答</h1>
+          <p class="text-4xl text-gray-600 mb-4">請掃描 QR Code 或輸入網址加入遊戲！</p>
           <div class="bg-pink-100 border-4 border-pink-300 px-8 py-6 rounded-2xl mb-10">
             <span class="text-3xl font-bold text-gray-700">資料庫即時題庫：</span>
             <span class="text-5xl font-extrabold text-pink-600 ml-3">{{ questions.length }} 題</span>
             <span class="text-3xl font-bold text-gray-700 ml-6">目前已連線參賽人數：</span>
             <span class="text-5xl font-extrabold text-pink-600 ml-3">{{ playersList.length }} 人</span>
           </div>
+                    <!-- 大廳圖片與文字水平置中對齊 -->
+          <div class="flex justify-center items-center gap-6 mt-6">
+            <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/D.png" alt="婚禮大廳照片" class="max-h-64 rounded-xl object-contain">
+            <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/qrcode_funtony.vercel.app.png" alt="QR CODE" class="max-h-64 rounded-xl object-contain">
+            <p class="text-3xl font-bold text-gray-600">請掃描 QR CODE 加入遊戲</p>
+          </div>
+          <p class="text-xs text-gray-400 mt-6 tracking-wide">Powered by Vercel & Supabase | Crafted by TONYTONY!!!</p>
+        </div>
           <!-- 完整玩家名單預覽 (帶滾輪) -->
           <div class="flex flex-wrap justify-center gap-3 max-w-4xl mb-8 max-h-48 overflow-y-auto bg-pink-50 p-4 rounded-2xl border border-pink-200">
             <span v-for="p in playersList" :key="p.id" class="bg-white border border-pink-300 px-4 py-2 rounded-full text-base font-bold text-pink-600 shadow-sm">
@@ -45,14 +52,7 @@
               <span>{{ isPlaying ? '暫停背景音樂' : '播放背景音樂 (點擊解鎖)' }}</span>
             </button>
           </div>
-          <!-- 大廳圖片與文字水平置中對齊 -->
-          <div class="flex justify-center items-center gap-6 mt-6">
-            <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/D.png" alt="婚禮大廳照片" class="max-h-64 rounded-xl object-contain">
-            <img src="https://qpqdpesalezkhdxupsyh.supabase.co/storage/v1/object/public/wedding-images/qrcode_funtony.vercel.app.png" alt="QR CODE" class="max-h-64 rounded-xl object-contain">
-            <p class="text-3xl font-bold text-gray-600">請掃描 QR CODE 加入遊戲</p>
-          </div>
-          <p class="text-xs text-gray-400 mt-6 tracking-wide">Powered by Vercel & Supabase | Crafted by TONYTONY!!!</p>
-        </div>
+
 
         <!-- 遊戲結束結算畫面 -->
         <div v-else-if="status === 'FINISHED'" class="flex-1 flex flex-col items-center justify-center bg-white p-12 rounded-3xl shadow-2xl text-center my-auto">
@@ -77,14 +77,14 @@
                   <span>🎵</span>
                   <span>{{ isPlaying ? '暫停' : '播放' }}</span>
                 </button>
-                <span class="text-2xl font-extrabold text-pink-600">第 {{ currentQ }} 題 / 共 {{ questions.length }} 題</span>
+                <span class="text-4xl font-extrabold text-pink-600">第 {{ currentQ }} 題 / 共 {{ questions.length }} 題</span>
               </div>
-              <span class="text-2xl font-bold">倒數：<span :class="timer === 0 ? 'text-gray-400' : 'text-red-500'">{{ timer }}</span> 秒</span>
+              <span class="text-4xl font-bold">倒數：<span :class="timer === 0 ? 'text-gray-400' : 'text-red-500'">{{ timer }}</span> 秒</span>
               <button @click="nextQuestion" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-xl font-bold shadow">下一題 / 結算</button>
             </div>
             
             <div class="text-center pt-2" v-if="currentQuestion">
-              <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ currentQuestion.question }}</h2>
+              <h2 class="text-4xl font-bold text-gray-800 mb-2">{{ currentQuestion.question }}</h2>
 <!-- 限制最大高度 300px 左右，確保下方選項與文字絕對不會被擠出畫面 -->
               <div v-if="currentQuestion.image" class="mb-3 w-full max-w-3xl mx-auto flex justify-center">
 
