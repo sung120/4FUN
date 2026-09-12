@@ -88,7 +88,7 @@
             </div>
             
             <div class="text-center pt-2" v-if="currentQuestion">
-              <h2 class="text-6xl font-extrabold text-gray-900 mb-4 leading-tight">{{ currentQuestion.question }}</h2>
+              <h2 class="text-5xl font-extrabold text-gray-900 mb-4 leading-tight">{{ currentQuestion.question }}</h2>
               
               <div v-if="currentQuestion.image" class="mb-4 w-full max-w-3xl mx-auto flex justify-center">
                 <img :src="currentQuestion.image" alt="題目圖片" class="w-full max-h-96 rounded-2xl shadow-md border-2 border-pink-200 object-contain">
@@ -98,7 +98,7 @@
               <div class="grid grid-cols-2 gap-4 max-w-4xl mx-auto">
                 <div v-for="(opt, idx) in [currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d]" :key="idx" 
                      :class="timer === 0 && ['OptionA', 'OptionB', 'OptionC', 'OptionD'][idx] === currentQuestion.answer ? 'bg-green-300 border-green-600 ring-4 ring-green-400' : 'bg-pink-50 border-pink-200'"
-                     class="border-4 p-6 rounded-3xl text-5xl font-extrabold text-gray-800 shadow-md transition-all flex items-center justify-center">
+                     class="border-4 p-6 rounded-3xl text-4xl font-extrabold text-gray-800 shadow-md transition-all flex items-center justify-center">
                   {{ ['A', 'B', 'C', 'D'][idx] }}. {{ opt }}
                 </div>
               </div>
