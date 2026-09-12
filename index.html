@@ -18,7 +18,8 @@
     
     <!-- 大螢幕端 (?view=screen) - 左右分割版面 -->
     <template v-if="isScreenView">
-      <div class="max-w-7xl mx-auto w-full flex-1 flex flex-col justify-between py-2">
+      <!-- 寬度從 max-w-7xl 放大約 1.4 倍至 max-w-screen-2xl (或自定義寬度容器) -->
+      <div class="max-w-[105rem] mx-auto w-full flex-1 flex flex-col justify-between py-2">
         <!-- 大廳等待畫面 -->
         <div v-if="status === 'LOBBY' || currentQ === 0" class="flex-1 flex flex-col items-center justify-center bg-white p-12 rounded-3xl shadow-2xl text-center my-auto">
           <h1 class="text-6xl font-extrabold text-pink-600 mb-6">TONY and YUWEN 的有獎徵答</h1>
@@ -73,8 +74,8 @@
         <!-- 遊戲進行中畫面：左右分割 (左側題目、右側全體即時計分板) -->
         <div v-else class="flex-1 grid grid-cols-12 gap-6 bg-white p-6 rounded-3xl shadow-2xl items-start">
           
-          <!-- 左側：題目與選項 (佔 8 欄，往上貼齊) -->
-          <div class="col-span-8 flex flex-col pr-4 border-r border-pink-100">
+          <!-- 左側：題目與選項 (將欄位從 col-span-8 擴大到 col-span-9，大約放大 1.4 倍寬度) -->
+          <div class="col-span-9 flex flex-col pr-4 border-r border-pink-100">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
               <div class="flex items-center gap-3">
                 <button @click="toggleMusic" class="bg-pink-100 hover:bg-pink-200 border border-pink-300 text-pink-700 px-3 py-1.5 rounded-full text-sm font-bold shadow flex items-center gap-1 transition">
@@ -90,15 +91,15 @@
             <div class="text-center pt-2" v-if="currentQuestion">
               <h2 class="text-5xl font-extrabold text-gray-900 mb-4 leading-tight">{{ currentQuestion.question }}</h2>
               
-              <div v-if="currentQuestion.image" class="mb-4 w-full max-w-3xl mx-auto flex justify-center">
-                <img :src="currentQuestion.image" alt="題目圖片" class="w-full max-h-96 rounded-2xl shadow-md border-2 border-pink-200 object-contain">
+              <div v-if="currentQuestion.image" class="mb-4 w-full max-w-4xl mx-auto flex justify-center">
+                <img :src="currentQuestion.image" alt="題目圖片" class="w-full max-h-80 rounded-2xl shadow-md border-2 border-pink-200 object-contain">
               </div>
 
-              <!-- 選項放大到 text-6xl -->
-              <div class="grid grid-cols-2 gap-4 max-w-4xl mx-auto">
+              <!-- 選項區塊最大寬度與欄位加寬，並維持大字體 -->
+              <div class="grid grid-cols-2 gap-4 max-w-full mx-auto">
                 <div v-for="(opt, idx) in [currentQuestion.option_a, currentQuestion.option_b, currentQuestion.option_c, currentQuestion.option_d]" :key="idx" 
                      :class="timer === 0 && ['OptionA', 'OptionB', 'OptionC', 'OptionD'][idx] === currentQuestion.answer ? 'bg-green-300 border-green-600 ring-4 ring-green-400' : 'bg-pink-50 border-pink-200'"
-                     class="border-4 p-6 rounded-3xl text-4xl font-extrabold text-gray-800 shadow-md transition-all flex items-center justify-center">
+                     class="border-4 p-6 rounded-3xl text-4xl font-extrabold text-gray-800 shadow-md transition-all flex items-center justify-center text-center">
                   {{ ['A', 'B', 'C', 'D'][idx] }}. {{ opt }}
                 </div>
               </div>
@@ -107,20 +108,18 @@
             </div>
           </div>
 
-          <!-- 右側：全體即時計分板 (佔 4 欄，固定高度並保持內部獨立滾動) -->
-          <div class="col-span-4 flex flex-col bg-pink-50 p-4 rounded-2xl border-2 border-pink-200 h-[650px]">
-            <!-- 英雄榜標題放大 -->
-            <h3 class="font-extrabold text-pink-600 text-3xl mb-3 text-center border-b border-pink-200 pb-2 flex-shrink-0">🏆 即時英雄榜 (共 {{ leaderboard.length }} 人)</h3>
+          <!-- 右側：全體即時計分板 (對應左側縮減至 col-span-3) -->
+          <div class="col-span-3 flex flex-col bg-pink-50 p-4 rounded-2xl border-2 border-pink-200 h-[650px]">
+            <h3 class="font-extrabold text-pink-600 text-2xl mb-3 text-center border-b border-pink-200 pb-2 flex-shrink-0">🏆 即時英雄榜 (共 {{ leaderboard.length }} 人)</h3>
             <div class="flex-1 overflow-y-auto min-h-0 flex flex-col gap-2 pr-1">
-              <!-- 英雄榜名單放大 -->
               <div v-for="(p, index) in leaderboard" :key="p.id" 
-                   class="flex justify-between items-center bg-white p-3 rounded-xl border border-pink-200 shadow-sm text-2xl font-bold flex-shrink-0">
-                <span class="truncate max-w-[200px]">
+                   class="flex justify-between items-center bg-white p-3 rounded-xl border border-pink-200 shadow-sm text-xl font-bold flex-shrink-0">
+                <span class="truncate max-w-[130px]">
                   <span class="text-pink-500 mr-2">#{{ index + 1 }}</span>{{ p.name }}
                 </span>
                 <span class="text-pink-600 font-extrabold">{{ p.score }} 分</span>
               </div>
-              <div v-if="leaderboard.length === 0" class="text-center text-gray-400 my-auto text-xl">尚無計分資料</div>
+              <div v-if="leaderboard.length === 0" class="text-center text-gray-400 my-auto text-lg">尚無計分資料</div>
             </div>
           </div>
 
